@@ -1,0 +1,85 @@
+name: society_management
+description: "A new Flutter project."
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.6
+  flutter_localizations:
+    sdk: flutter
+  shared_preferences: ^2.4.0
+  intl: ^0.19.0
+  gap: ^3.0.1
+  cached_network_image: ^3.4.1
+  pin_code_fields: ^8.0.1
+  firebase_core: ^3.11.0
+  get_it: ^8.0.3
+  injectable: ^2.5.0
+  firebase_messaging: ^15.2.2
+  cloud_functions: ^5.3.2
+  fpdart: ^1.1.1
+  change_case: ^2.2.0
+  cloud_firestore: ^5.6.3
+  firebase_auth: ^5.4.2
+  firebase_storage: ^12.4.2
+  equatable: ^2.0.7
+  fluttertoast: ^8.2.11
+  file_picker: ^8.3.3
+  image_picker: ^1.1.2
+  device_info_plus: ^11.3.0
+  uuid: ^4.5.1
+  collection: ^1.19.0
+  flutter_image_compress: ^2.4.0
+  path: ^1.9.0
+  path_provider: ^2.1.5
+  pdf: ^3.11.3
+  share_plus: ^10.1.4
+  easy_debounce: ^2.0.3
+  visibility_detector: ^0.4.0+2
+  flutter_svg: ^2.1.0
+  bloc: ^9.0.0
+  flutter_bloc: ^9.1.0
+
+dev_dependencies:
+  injectable_generator: 2.6.2
+  build_runner: ^2.4.14
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+
+flutter:
+
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/images/
+    - assets/icon/
+
+  fonts:
+    - family: SFProDisplay
+      fonts:
+        - asset: fonts/SFProDisplay-Regular.ttf
+          weight: 400
+        - asset: fonts/SFProDisplay-Medium.ttf
+          weight: 500
+        - asset: fonts/SFProDisplay-Semibold.ttf
+          weight: 600
+        - asset: fonts/SFProDisplay-Bold.ttf
+          weight: 700
+        - asset: fonts/SFProDisplay-Heavy.ttf
+          weight: 900
+  
+flutter_intl:
+  enabled: true
+  class_name: I10n
+  main_locale: en
+  arb_dir: lib/l10n/arb
+  output_dir: lib/l10n/generated

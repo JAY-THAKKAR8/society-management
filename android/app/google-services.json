@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "100215673817",
+    "project_id": "society-management-46696",
+    "storage_bucket": "society-management-46696.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:100215673817:android:7b5edeed15419529733fc8",
+        "android_client_info": {
+          "package_name": "com.example.society_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDV_Lyn6WQUfkn6ARbF3jJLCEw2FVdjwVg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

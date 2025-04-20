@@ -1,0 +1,4 @@
+enum UserAction {
+  add,
+  edit,
+}
