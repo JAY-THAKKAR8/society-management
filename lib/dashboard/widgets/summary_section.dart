@@ -4,6 +4,7 @@ import 'package:society_management/dashboard/model/dashboard_stats_model.dart';
 import 'package:society_management/dashboard/repository/i_dashboard_stats_repository.dart';
 import 'package:society_management/dashboard/widgets/summary_card.dart';
 import 'package:society_management/injector/injector.dart';
+import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
 import 'package:society_management/users/view/line_users_page.dart';
 import 'package:society_management/utility/utility.dart';
 
@@ -130,11 +131,23 @@ class SummarySectionState extends State<SummarySection> with WidgetsBindingObser
               ),
             ),
             const Gap(16),
-            const Expanded(
+            Expanded(
               child: SummaryCard(
                 icon: Icons.monetization_on,
-                title: "Pending Dues",
-                value: "₹24,000",
+                title: "Maintenance Dues",
+                value: _isLoading
+                    ? "Loading..."
+                    : _stats != null
+                        ? "₹${_stats!.maintenancePending.toStringAsFixed(2)}"
+                        : "₹0",
+                onTap: () {
+                  // Navigate to maintenance page
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const MaintenancePeriodsPage(),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -154,11 +167,23 @@ class SummarySectionState extends State<SummarySection> with WidgetsBindingObser
               ),
             ),
             const Gap(16),
-            const Expanded(
+            Expanded(
               child: SummaryCard(
-                icon: Icons.report_problem,
-                title: "Open Complaints",
-                value: "8",
+                icon: Icons.calendar_month,
+                title: "Active Maintenance",
+                value: _isLoading
+                    ? "Loading..."
+                    : _stats != null
+                        ? "${_stats!.activeMaintenance}"
+                        : "0",
+                onTap: () {
+                  // Navigate to maintenance page
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const MaintenancePeriodsPage(),
+                    ),
+                  );
+                },
               ),
             ),
           ],
