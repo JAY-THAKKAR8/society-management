@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:society_management/constants/app_colors.dart';
 
 class RecentActivityItem extends StatelessWidget {
-  final String activity;
-  
+  final String? activity;
+
   const RecentActivityItem({
     super.key,
     required this.activity,
@@ -12,7 +12,7 @@ class RecentActivityItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -22,11 +22,11 @@ class RecentActivityItem extends StatelessWidget {
       ),
       child: ListTile(
         leading: const Icon(
-          Icons.notifications, 
+          Icons.notifications,
           color: AppColors.buttonColor,
         ),
         title: Text(
-          activity,
+          activity ?? 'Unknown activity',
           style: theme.textTheme.bodyMedium,
         ),
       ),

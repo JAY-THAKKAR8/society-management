@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:society_management/constants/app_assets.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/utility/extentions/colors_extnetions.dart';
-import 'package:society_management/widget/app_svg_image.dart';
 
 class AppDropDown<T> extends StatelessWidget {
   const AppDropDown(
@@ -44,7 +42,7 @@ class AppDropDown<T> extends StatelessWidget {
           value: selectedValue,
           validator: validator,
           focusNode: focusNode,
-          icon: const AppSvgImage(AppAssets.downArrowIcon),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded),
           onChanged: (v) {
             onSelect(v);
           },

@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:society_management/auth/repository/auth_repository.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/injector/update_injector.dart';
 import 'package:society_management/utility/firebase_messaging_service.dart';
@@ -21,6 +22,10 @@ Future<void> bootstrap(Widget builder) async {
     await configureDependencies();
     // Manually register repositories that are not auto-generated
     updateInjector();
+
+    // Create default admin user if it doesn't exist
+    final authRepository = AuthRepository();
+    await authRepository.createDefaultAdminIfNotExists();
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,

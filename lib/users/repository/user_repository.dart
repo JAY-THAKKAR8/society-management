@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:injectable/injectable.dart';
+import 'package:society_management/auth/repository/auth_repository.dart';
 import 'package:society_management/extentions/firestore_extentions.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
@@ -10,6 +11,8 @@ import 'package:society_management/utility/result.dart';
 @Injectable(as: IUserRepository)
 class UserRepository extends IUserRepository {
   UserRepository(super.firestore);
+
+  final AuthRepository _authRepository = AuthRepository();
 
   @override
   FirebaseResult<UserModel> addCustomer(
@@ -22,65 +25,29 @@ class UserRepository extends IUserRepository {
       String? password}) {
     return Result<UserModel>().tryCatch(
       run: () async {
-        final now = Timestamp.now();
-        final customerCollection = FirebaseFirestore.instance.users;
-        final customerDoc = customerCollection.doc();
-
-        // Create user document
-        await customerDoc.set({
-          'id': customerDoc.id,
-          'name': name,
-          'email': email,
-          'mobile_number': mobileNumber,
-          'villa_number': villNumber,
-          'line_number': line,
-          'role': role,
-          'password': password,
-          'createdAt': now.toDate(),
-          'updatedAt': now.toDate(),
-        });
-
-        // Update dashboard stats - increment total members
-        final statsRef = FirebaseFirestore.instance.dashboardStats.doc('stats');
-        final statsDoc = await statsRef.get();
-
-        if (!statsDoc.exists) {
-          // Create initial stats document if it doesn't exist
-          await statsRef.set({
-            'total_members': 1,
-            'total_expenses': 0.0,
-            'updated_at': now,
-          });
-        } else {
-          // Increment total members count
-          final currentCount = statsDoc.data()?['total_members'] as int? ?? 0;
-          await statsRef.update({
-            'total_members': currentCount + 1,
-            'updated_at': now,
-          });
+        // Get current user to use as creator
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser == null) {
+          throw Exception('No user is currently logged in');
         }
 
-        // Log activity
-        final activityDoc = FirebaseFirestore.instance.activities.doc();
-        await activityDoc.set({
-          'id': activityDoc.id,
-          'message': '🧾 New user added: ${name ?? 'Unknown'} (${role ?? 'Member'})',
-          'type': 'user',
-          'timestamp': now,
-        });
-
-        return UserModel(
-          id: customerDoc.id,
-          name: name,
-          email: email,
-          mobileNumber: mobileNumber,
-          villNumber: villNumber,
+        // Use AuthRepository to create user in Firebase Auth and Firestore
+        final result = await _authRepository.createUserWithEmailAndPassword(
+          email: email ?? '',
+          password: password ?? '',
+          name: name ?? '',
+          role: role ?? '',
           lineNumber: line,
-          role: role,
-          password: password,
-          createdAt: now.toDate().toString(),
-          updatedAt: now.toDate().toString(),
+          villNumber: villNumber,
+          mobileNumber: mobileNumber,
+          creatorId: currentUser.uid, // Pass current user as creator
         );
+
+        if (!result.isSuccess || result.user == null) {
+          throw Exception(result.errorMessage ?? 'Failed to create user');
+        }
+
+        return result.user!;
       },
     );
   }

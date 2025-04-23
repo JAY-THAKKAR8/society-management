@@ -46,17 +46,33 @@ class RecentActivitySectionState extends State<RecentActivitySection> {
         return;
       }
 
-      final activities = activitiesSnapshot.docs.map((doc) => ActivityModel.fromJson(doc.data())).toList();
+      final activities = activitiesSnapshot.docs.map((doc) {
+        try {
+          return ActivityModel.fromJson(doc.data());
+        } catch (e) {
+          // If there's an error parsing a specific activity, create a fallback one
+          return ActivityModel(
+            id: doc.id,
+            message: 'Activity data error',
+            type: 'error',
+            timestamp: DateTime.now(),
+          );
+        }
+      }).toList();
 
-      setState(() {
-        _activities = activities;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _activities = activities;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+        });
+      }
     }
   }
 
@@ -98,9 +114,21 @@ class RecentActivitySectionState extends State<RecentActivitySection> {
           )
         else if (_errorMessage != null)
           Center(
-            child: Text(
-              "Error: $_errorMessage",
-              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.red),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Text(
+                    "Error loading activities",
+                    style: theme.textTheme.bodyMedium?.copyWith(color: Colors.red),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _fetchActivities,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
             ),
           )
         else if (_activities == null || _activities!.isEmpty)
@@ -115,7 +143,7 @@ class RecentActivitySectionState extends State<RecentActivitySection> {
           )
         else
           ...(_activities ?? []).map(
-            (activity) => RecentActivityItem(activity: activity.message),
+            (activity) => RecentActivityItem(activity: activity.message ?? 'Unknown activity'),
           ),
       ],
     );

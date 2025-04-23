@@ -12,7 +12,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppWrapper(
       child: MaterialApp(
-        title: 'Demolition and Dent',
+        title: 'KDV Management',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         locale: const Locale.fromSubtags(languageCode: 'en'),

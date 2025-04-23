@@ -16,6 +16,7 @@ class UserModel extends Equatable {
     this.isVillaOpen,
     this.createdAt,
     this.updatedAt,
+    this.createdBy,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +33,7 @@ class UserModel extends Equatable {
       isVillaOpen: json['is_villa_open'] as String?,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
+      createdBy: json['created_by'] as String?,
     );
   }
 
@@ -47,6 +49,7 @@ class UserModel extends Equatable {
   final String? isVillaOpen;
   final String? createdAt;
   final String? updatedAt;
+  final String? createdBy;
 
   UserModel copyWith({
     String? id,
@@ -61,6 +64,7 @@ class UserModel extends Equatable {
     String? isVillaOpen,
     String? createdAt,
     String? updatedAt,
+    String? createdBy,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -75,6 +79,7 @@ class UserModel extends Equatable {
       isVillaOpen: isVillaOpen ?? this.isVillaOpen,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 
@@ -91,6 +96,7 @@ class UserModel extends Equatable {
         'is_villa_open': isVillaOpen,
         'created_at': createdAt,
         'updated_at': updatedAt,
+        'created_by': createdBy,
       };
 
   @override
@@ -107,6 +113,7 @@ class UserModel extends Equatable {
         isVillaOpen,
         createdAt,
         updatedAt,
+        createdBy,
       ];
 
   @override

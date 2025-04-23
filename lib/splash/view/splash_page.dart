@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gap/gap.dart';
-import 'package:society_management/constants/app_assets.dart';
+import 'package:society_management/auth/service/auth_service.dart';
+import 'package:society_management/auth/view/login_page.dart';
+import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/dashboard/dashboard_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
-import 'package:society_management/widget/app_asset_image.dart';
-import 'package:society_management/widget/common_button.dart';
+import 'package:society_management/utility/utility.dart';
+import 'package:society_management/widget/kdv_logo.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -15,6 +16,8 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
+  final AuthService _authService = AuthService();
+
   @override
   void initState() {
     super.initState();
@@ -23,54 +26,122 @@ class _SplashPageState extends State<SplashPage> {
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    try {
+      // Delay for 2 seconds to show splash screen
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (!mounted) return;
+
+      // Check if user is already logged in
+      final isLoggedIn = await _authService.isLoggedIn();
+
+      if (isLoggedIn) {
+        // Get current user data to verify Firebase session is still valid
+        final user = await _authService.getCurrentUser();
+
+        if (user != null) {
+          // User is logged in and Firebase session is valid
+          if (mounted) {
+            context.pushAndRemoveUntil(const AdminDashboard());
+          }
+        } else {
+          // Firebase session expired, clear login state and go to login page
+          await _authService.clearLoginState();
+          if (mounted) {
+            context.pushAndRemoveUntil(const LoginPage());
+          }
+        }
+      } else {
+        // User is not logged in, go to login page
+        if (mounted) {
+          context.pushAndRemoveUntil(const LoginPage());
+        }
+      }
+    } catch (e) {
+      // Error occurred, go to login page
+      Utility.toast(message: 'Error checking login status: $e');
+      if (mounted) {
+        context.pushAndRemoveUntil(const LoginPage());
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(right: 7),
-            child: AppAssetImage(
-              AppAssets.splashCar,
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary,
+              AppColors.primary.withBlue(60),
+              AppColors.primary.withBlue(100),
+            ],
           ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const AppAssetImage(
-                  AppAssets.carLogo,
-                  height: 51,
-                  width: 188,
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Custom KDV Logo with glow effect
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withAlpha(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.buttonColor.withAlpha(75),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
                 ),
-                const Gap(14),
-                Text(
-                  'Dents Fixed, Hassle Free',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                child: const KDVLogo(
+                  size: 120,
+                  primaryColor: AppColors.buttonColor,
+                  secondaryColor: Colors.white,
                 ),
-                const Gap(6),
-                Text(
-                  'Book dent repairs with ease. Quick service, realtime updates, and transparent pricing -anytime anywhere.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 30),
+              // App name
+              const Text(
+                'KDV Management',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1.2,
                 ),
-                const Gap(24),
-                CommonButton(
-                  text: 'Get started',
-                  onTap: () {
-                    // navigation();
-                    context.push(const AdminDashboard());
-                  },
-                )
-              ],
-            ),
+              ),
+              const SizedBox(height: 10),
+              // App subtitle
+              Text(
+                'Society Management System',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withAlpha(180),
+                ),
+              ),
+              const SizedBox(height: 40),
+              // Loading indicator
+              const SizedBox(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.buttonColor),
+                  strokeWidth: 3,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:society_management/constants/app_assets.dart';
 import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/constants/app_strings.dart';
 import 'package:society_management/cubit/refresh_cubit.dart';
@@ -11,7 +10,6 @@ import 'package:society_management/injector/injector.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
-import 'package:society_management/widget/app_asset_image.dart';
 import 'package:society_management/widget/app_drop_down_widget.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
 import 'package:society_management/widget/common_app_bar.dart';
@@ -236,9 +234,7 @@ class _AddUserPageState extends State<AddUserPage> {
                           onPressed: () {
                             passwordVisbility.value = !visible;
                           },
-                          icon: AppAssetImage(
-                            visible ? AppAssets.checkIcon : AppAssets.calendarIcon,
-                          ),
+                          icon: Icon(visible ? Icons.visibility_off : Icons.visibility),
                         ),
                       );
                     },

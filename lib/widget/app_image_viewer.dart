@@ -61,7 +61,7 @@ class AppImageViewer extends StatelessWidget {
         width: width,
         child: Utility.imageLoader(
           url: networkImage!,
-          placeholder: AppAssets.splashCar,
+          placeholder: AppAssets.appLogo,
           shape: BoxShape.rectangle,
           borderRadius: BorderRadius.circular(borderRadius ?? 15),
         ),
