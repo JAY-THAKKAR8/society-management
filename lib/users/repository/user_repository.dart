@@ -153,6 +153,7 @@ class UserRepository extends IUserRepository {
   FirebaseResult<void> deleteCustomer({required String userId}) {
     return Result<void>().tryCatch(
       run: () async {
+        final now = Timestamp.now();
         final customerCollection = FirebaseFirestore.instance.users;
         final userDoc = await customerCollection.doc(userId).get();
 
@@ -160,7 +161,37 @@ class UserRepository extends IUserRepository {
           throw Exception('User not found');
         }
 
+        // Get user data before deleting
+        final userData = userDoc.data()!;
+        final userName = userData['name'] as String? ?? 'Unknown';
+        final userRole = userData['role'] as String? ?? 'Member';
+
+        // Delete the user document
         await customerCollection.doc(userId).delete();
+
+        // Update dashboard stats - decrement total members
+        final statsRef = FirebaseFirestore.instance.dashboardStats.doc('stats');
+        final statsDoc = await statsRef.get();
+
+        if (statsDoc.exists) {
+          // Decrement total members count
+          final currentCount = statsDoc.data()?['total_members'] as int? ?? 0;
+          // Ensure we don't go below zero
+          final newCount = currentCount > 0 ? currentCount - 1 : 0;
+          await statsRef.update({
+            'total_members': newCount,
+            'updated_at': now,
+          });
+        }
+
+        // Log activity for deletion
+        final activityDoc = FirebaseFirestore.instance.activities.doc();
+        await activityDoc.set({
+          'id': activityDoc.id,
+          'message': '🗑️ User deleted: $userName ($userRole)',
+          'type': 'user_delete',
+          'timestamp': now,
+        });
       },
     );
   }

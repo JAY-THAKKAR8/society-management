@@ -21,13 +21,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
           "Welcome, Admin",
-          style: theme.textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleLarge,
         ),
         backgroundColor: AppColors.primary,
         actions: [

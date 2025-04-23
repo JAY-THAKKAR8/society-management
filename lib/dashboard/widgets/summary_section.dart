@@ -4,6 +4,7 @@ import 'package:society_management/dashboard/model/dashboard_stats_model.dart';
 import 'package:society_management/dashboard/repository/i_dashboard_stats_repository.dart';
 import 'package:society_management/dashboard/widgets/summary_card.dart';
 import 'package:society_management/injector/injector.dart';
+import 'package:society_management/users/view/line_users_page.dart';
 import 'package:society_management/utility/utility.dart';
 
 class SummarySection extends StatefulWidget {
@@ -119,6 +120,13 @@ class SummarySectionState extends State<SummarySection> with WidgetsBindingObser
                     : _stats != null
                         ? "${_stats!.totalMembers}"
                         : "0",
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const LineUsersPage(),
+                    ),
+                  );
+                },
               ),
             ),
             const Gap(16),

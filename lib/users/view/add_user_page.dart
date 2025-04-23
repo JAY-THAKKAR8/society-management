@@ -84,7 +84,7 @@ class _AddUserPageState extends State<AddUserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'Add New Customer',
+        title: widget.userId == null ? 'Add New Member' : 'Edit Member',
         showDivider: true,
         onBackTap: () {
           context.pop();
@@ -250,7 +250,7 @@ class _AddUserPageState extends State<AddUserPage> {
                   builder: (context, loading, _) {
                     return CommonButton(
                       isLoading: loading,
-                      text: 'Create',
+                      text: widget.userId == null ? 'Create' : 'Update',
                       onTap: () {
                         if (widget.userId == null) {
                           createUser();
