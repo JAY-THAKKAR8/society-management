@@ -36,6 +36,7 @@ class ExpenseRepository extends IExpenseRepository {
           };
         }).toList();
 
+        // Create expense document
         await expenseDoc.set({
           'id': expenseDoc.id,
           'name': name,
@@ -45,6 +46,35 @@ class ExpenseRepository extends IExpenseRepository {
           'total_amount': totalAmount,
           'created_at': now,
           'updated_at': now,
+        });
+
+        // Update dashboard stats - increment total expenses
+        final statsRef = FirebaseFirestore.instance.dashboardStats.doc('stats');
+        final statsDoc = await statsRef.get();
+
+        if (!statsDoc.exists) {
+          // Create initial stats document if it doesn't exist
+          await statsRef.set({
+            'total_members': 0,
+            'total_expenses': totalAmount,
+            'updated_at': now,
+          });
+        } else {
+          // Increment total expenses amount
+          final currentAmount = (statsDoc.data()?['total_expenses'] as num?)?.toDouble() ?? 0.0;
+          await statsRef.update({
+            'total_expenses': currentAmount + totalAmount,
+            'updated_at': now,
+          });
+        }
+
+        // Log activity
+        final activityDoc = FirebaseFirestore.instance.activities.doc();
+        await activityDoc.set({
+          'id': activityDoc.id,
+          'message': '💰 New expense added: $name (₹${totalAmount.toStringAsFixed(2)})',
+          'type': 'expense',
+          'timestamp': now,
         });
 
         final expenseItemModels = expenseItems

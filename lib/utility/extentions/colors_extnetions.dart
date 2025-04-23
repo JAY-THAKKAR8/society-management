@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-extension ColorsExtnetions on Color {
+extension ColorsExtensions on Color {
   Color withOpacity2(double opacity) {
-    return withValues(alpha: opacity);
+    return withOpacity(opacity); // ✅ Correct method
   }
 }

@@ -25,6 +25,8 @@ class UserRepository extends IUserRepository {
         final now = Timestamp.now();
         final customerCollection = FirebaseFirestore.instance.users;
         final customerDoc = customerCollection.doc();
+
+        // Create user document
         await customerDoc.set({
           'id': customerDoc.id,
           'name': name,
@@ -37,6 +39,36 @@ class UserRepository extends IUserRepository {
           'createdAt': now.toDate(),
           'updatedAt': now.toDate(),
         });
+
+        // Update dashboard stats - increment total members
+        final statsRef = FirebaseFirestore.instance.dashboardStats.doc('stats');
+        final statsDoc = await statsRef.get();
+
+        if (!statsDoc.exists) {
+          // Create initial stats document if it doesn't exist
+          await statsRef.set({
+            'total_members': 1,
+            'total_expenses': 0.0,
+            'updated_at': now,
+          });
+        } else {
+          // Increment total members count
+          final currentCount = statsDoc.data()?['total_members'] as int? ?? 0;
+          await statsRef.update({
+            'total_members': currentCount + 1,
+            'updated_at': now,
+          });
+        }
+
+        // Log activity
+        final activityDoc = FirebaseFirestore.instance.activities.doc();
+        await activityDoc.set({
+          'id': activityDoc.id,
+          'message': '🧾 New user added: ${name ?? 'Unknown'} (${role ?? 'Member'})',
+          'type': 'user',
+          'timestamp': now,
+        });
+
         return UserModel(
           id: customerDoc.id,
           name: name,

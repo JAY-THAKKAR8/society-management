@@ -7,8 +7,17 @@ import 'package:society_management/expenses/view/add_expense_page.dart';
 import 'package:society_management/users/view/add_user_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 
-class AdminDashboard extends StatelessWidget {
+class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
+
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  // Keys to force refresh the dashboard widgets
+  final GlobalKey<SummarySectionState> _summaryKey = GlobalKey<SummarySectionState>();
+  final GlobalKey<RecentActivitySectionState> _activityKey = GlobalKey<RecentActivitySectionState>();
 
   @override
   Widget build(BuildContext context) {
@@ -21,24 +30,43 @@ class AdminDashboard extends StatelessWidget {
           style: theme.textTheme.titleLarge,
         ),
         backgroundColor: AppColors.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Force refresh all dashboard sections
+              _summaryKey.currentState?.refreshStats();
+              _activityKey.currentState?.refreshActivities();
+            },
+            tooltip: 'Refresh dashboard',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SummarySection(),
+            SummarySection(key: _summaryKey),
             const SizedBox(height: 24),
             QuickActionsSection(
-              onAddUser: () {
-                context.push(const AddUserPage());
+              onAddUser: () async {
+                // Navigate to add user page and refresh when returning
+                await context.push(const AddUserPage());
+                // Refresh both dashboard sections
+                _summaryKey.currentState?.refreshStats();
+                _activityKey.currentState?.refreshActivities();
               },
-              onAddExpense: () {
-                context.push(const AddExpensePage());
+              onAddExpense: () async {
+                // Navigate to add expense page and refresh when returning
+                await context.push(const AddExpensePage());
+                // Refresh both dashboard sections
+                _summaryKey.currentState?.refreshStats();
+                _activityKey.currentState?.refreshActivities();
               },
             ),
             const SizedBox(height: 24),
-            const RecentActivitySection(),
+            RecentActivitySection(key: _activityKey),
           ],
         ),
       ),

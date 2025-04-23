@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:society_management/cubit/refresh_cubit.dart';
 import 'package:society_management/expenses/model/expense_item_model.dart';
 import 'package:society_management/expenses/repository/i_expense_repository.dart';
 import 'package:society_management/expenses/widgets/expense_form.dart';
@@ -32,20 +30,22 @@ class _AddExpensePageState extends State<AddExpensePage> {
     required List<ExpenseItemModel> items,
   }) async {
     isLoading.value = true;
-    
-    final itemsData = items.map((item) => {
-      'id': item.id,
-      'name': item.name,
-      'price': item.price,
-    }).toList();
-    
+
+    final itemsData = items
+        .map((item) => {
+              'id': item.id,
+              'name': item.name,
+              'price': item.price,
+            })
+        .toList();
+
     final response = await getIt<IExpenseRepository>().addExpense(
       name: name,
       startDate: startDate,
       endDate: endDate,
       items: itemsData,
     );
-    
+
     response.fold(
       (failure) {
         isLoading.value = false;

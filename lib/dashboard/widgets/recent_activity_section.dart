@@ -1,32 +1,122 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:society_management/dashboard/model/activity_model.dart';
 import 'package:society_management/dashboard/widgets/recent_activity_item.dart';
+import 'package:society_management/extentions/firestore_extentions.dart';
 
-class RecentActivitySection extends StatelessWidget {
+class RecentActivitySection extends StatefulWidget {
   const RecentActivitySection({super.key});
+
+  @override
+  RecentActivitySectionState createState() => RecentActivitySectionState();
+}
+
+class RecentActivitySectionState extends State<RecentActivitySection> {
+  List<ActivityModel>? _activities;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchActivities();
+  }
+
+  // Public method to refresh activities from outside
+  void refreshActivities() {
+    _fetchActivities();
+  }
+
+  Future<void> _fetchActivities() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      // Fetch recent activities from Firestore
+      final activitiesSnapshot =
+          await FirebaseFirestore.instance.activities.orderBy('timestamp', descending: true).limit(5).get();
+
+      if (activitiesSnapshot.docs.isEmpty) {
+        setState(() {
+          _activities = [];
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final activities = activitiesSnapshot.docs.map((doc) => ActivityModel.fromJson(doc.data())).toList();
+
+      setState(() {
+        _activities = activities;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
-    // Sample activity data
-    final List<String> activities = [
-      "✅ Payment received from John (₹1,200)",
-      "📢 Notice sent to all Line Heads",
-      "🧾 New user added: Ramesh (Line Member)",
-      "⚠ Complaint logged by Line 3",
-    ];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Recent Activity",
-          style: theme.textTheme.titleLarge,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Recent Activity",
+              style: theme.textTheme.titleLarge,
+            ),
+            if (_isLoading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _fetchActivities,
+                tooltip: 'Refresh activities',
+              ),
+          ],
         ),
         const SizedBox(height: 12),
-        ...activities.map(
-          (activity) => RecentActivityItem(activity: activity),
-        ),
+        if (_isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_errorMessage != null)
+          Center(
+            child: Text(
+              "Error: $_errorMessage",
+              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.red),
+            ),
+          )
+        else if (_activities == null || _activities!.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "No recent activities",
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+          )
+        else
+          ...(_activities ?? []).map(
+            (activity) => RecentActivityItem(activity: activity.message),
+          ),
       ],
     );
   }

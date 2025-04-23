@@ -16,6 +16,10 @@ import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 import 'package:society_management/cubit/refresh_cubit.dart' as _i998;
+import 'package:society_management/dashboard/repository/dashboard_stats_repository.dart'
+    as _i522;
+import 'package:society_management/dashboard/repository/i_dashboard_stats_repository.dart'
+    as _i272;
 import 'package:society_management/expenses/repository/expense_repository.dart'
     as _i756;
 import 'package:society_management/expenses/repository/i_expense_repository.dart'
@@ -62,6 +66,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i728.UserRepository(gh<_i974.FirebaseFirestore>()));
     gh.factory<_i484.IExpenseRepository>(
         () => _i756.ExpenseRepository(gh<_i974.FirebaseFirestore>()));
+    gh.factory<_i272.IDashboardStatsRepository>(
+        () => _i522.DashboardStatsRepository(gh<_i974.FirebaseFirestore>()));
     return this;
   }
 }
