@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/dashboard_page.dart';
+import 'package:society_management/dashboard/line_member_dashboard.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/kdv_logo.dart';
@@ -46,7 +48,12 @@ class _SplashPageState extends State<SplashPage> {
         if (user != null) {
           // User is logged in and Firebase session is valid
           if (mounted) {
-            context.pushAndRemoveUntil(const AdminDashboard());
+            // Route based on user role
+            if (user.role == AppConstants.lineMember) {
+              context.pushAndRemoveUntil(const LineMemberDashboard());
+            } else {
+              context.pushAndRemoveUntil(const AdminDashboard());
+            }
           }
         } else {
           // Firebase session expired, clear login state and go to login page

@@ -91,4 +91,13 @@ abstract class IMaintenanceRepository {
     double? amountPaid,
     String? notes,
   });
+
+  /// Add a user to all active maintenance periods
+  FirebaseResult<void> addUserToActiveMaintenancePeriods({
+    required String userId,
+    required String userName,
+    required String? userVillaNumber,
+    required String? userLineNumber,
+    required String? userRole,
+  });
 }

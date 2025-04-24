@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:injectable/injectable.dart';
+import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/extentions/firestore_extentions.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
@@ -27,9 +28,14 @@ class MaintenanceRepository extends IMaintenanceRepository {
         final periodDoc = maintenanceCollection.doc();
 
         // Calculate total pending amount (will be updated as users pay)
-        // First, get total number of users
+        // First, get total number of users (excluding admins)
         final usersSnapshot = await FirebaseFirestore.instance.users.get();
-        final totalUsers = usersSnapshot.docs.length;
+        final nonAdminUsers = usersSnapshot.docs.where((doc) {
+          final role = doc.data()['role'] as String?;
+          // Exclude all admin users from maintenance calculations
+          return role != 'admin' && role != 'ADMIN' && role != AppConstants.admins && role?.toLowerCase() != 'admin';
+        }).toList();
+        final totalUsers = nonAdminUsers.length;
         final totalPending = amount * totalUsers;
 
         // Create maintenance period document
@@ -48,14 +54,15 @@ class MaintenanceRepository extends IMaintenanceRepository {
           'updated_at': now,
         });
 
-        // Create payment records for all users
+        // Create payment records for all users (excluding admins)
         final batch = FirebaseFirestore.instance.batch();
         final paymentsCollection = FirebaseFirestore.instance.maintenancePayments;
 
-        for (final userDoc in usersSnapshot.docs) {
+        for (final userDoc in nonAdminUsers) {
           final userData = userDoc.data();
+
           final paymentDoc = paymentsCollection.doc();
-          
+
           batch.set(paymentDoc, {
             'id': paymentDoc.id,
             'period_id': periodDoc.id,
@@ -110,13 +117,10 @@ class MaintenanceRepository extends IMaintenanceRepository {
   FirebaseResult<List<MaintenancePeriodModel>> getAllMaintenancePeriods() {
     return Result<List<MaintenancePeriodModel>>().tryCatch(
       run: () async {
-        final periodsSnapshot = await FirebaseFirestore.instance.maintenance
-            .orderBy('created_at', descending: true)
-            .get();
+        final periodsSnapshot =
+            await FirebaseFirestore.instance.maintenance.orderBy('created_at', descending: true).get();
 
-        final periods = periodsSnapshot.docs
-            .map((doc) => MaintenancePeriodModel.fromJson(doc.data()))
-            .toList();
+        final periods = periodsSnapshot.docs.map((doc) => MaintenancePeriodModel.fromJson(doc.data())).toList();
 
         return periods;
       },
@@ -132,9 +136,7 @@ class MaintenanceRepository extends IMaintenanceRepository {
             .orderBy('created_at', descending: true)
             .get();
 
-        final periods = periodsSnapshot.docs
-            .map((doc) => MaintenancePeriodModel.fromJson(doc.data()))
-            .toList();
+        final periods = periodsSnapshot.docs.map((doc) => MaintenancePeriodModel.fromJson(doc.data())).toList();
 
         return periods;
       },
@@ -239,9 +241,8 @@ class MaintenanceRepository extends IMaintenanceRepository {
         final periodName = periodDoc.data()!['name'];
 
         // Delete all related payments
-        final paymentsSnapshot = await FirebaseFirestore.instance.maintenancePayments
-            .where('period_id', isEqualTo: periodId)
-            .get();
+        final paymentsSnapshot =
+            await FirebaseFirestore.instance.maintenancePayments.where('period_id', isEqualTo: periodId).get();
 
         final batch = FirebaseFirestore.instance.batch();
         for (final paymentDoc in paymentsSnapshot.docs) {
@@ -284,7 +285,7 @@ class MaintenanceRepository extends IMaintenanceRepository {
     return Result<MaintenancePaymentModel>().tryCatch(
       run: () async {
         final now = Timestamp.now();
-        
+
         // Find existing payment record
         final paymentsSnapshot = await FirebaseFirestore.instance.maintenancePayments
             .where('period_id', isEqualTo: periodId)
@@ -328,15 +329,13 @@ class MaintenanceRepository extends IMaintenanceRepository {
         if (periodDoc.exists) {
           final totalCollected = (periodDoc.data()!['total_collected'] as num?)?.toDouble() ?? 0.0;
           final totalPending = (periodDoc.data()!['total_pending'] as num?)?.toDouble() ?? 0.0;
-          
+
           // Calculate the difference in payment
           final paymentDifference = amountPaid - previousAmountPaid;
-          
+
           await periodRef.update({
             'total_collected': totalCollected + paymentDifference,
-            'total_pending': totalPending - paymentDifference > 0 
-                ? totalPending - paymentDifference 
-                : 0.0,
+            'total_pending': totalPending - paymentDifference > 0 ? totalPending - paymentDifference : 0.0,
             'updated_at': now,
           });
         }
@@ -365,8 +364,8 @@ class MaintenanceRepository extends IMaintenanceRepository {
       case PaymentStatus.overdue:
         return 'overdue';
       case PaymentStatus.pending:
-      default:
         return 'pending';
+      // Default case is handled by pending case
     }
   }
 
@@ -376,13 +375,10 @@ class MaintenanceRepository extends IMaintenanceRepository {
   }) {
     return Result<List<MaintenancePaymentModel>>().tryCatch(
       run: () async {
-        final paymentsSnapshot = await FirebaseFirestore.instance.maintenancePayments
-            .where('period_id', isEqualTo: periodId)
-            .get();
+        final paymentsSnapshot =
+            await FirebaseFirestore.instance.maintenancePayments.where('period_id', isEqualTo: periodId).get();
 
-        final payments = paymentsSnapshot.docs
-            .map((doc) => MaintenancePaymentModel.fromJson(doc.data()))
-            .toList();
+        final payments = paymentsSnapshot.docs.map((doc) => MaintenancePaymentModel.fromJson(doc.data())).toList();
 
         return payments;
       },
@@ -400,9 +396,7 @@ class MaintenanceRepository extends IMaintenanceRepository {
             .orderBy('created_at', descending: true)
             .get();
 
-        final payments = paymentsSnapshot.docs
-            .map((doc) => MaintenancePaymentModel.fromJson(doc.data()))
-            .toList();
+        final payments = paymentsSnapshot.docs.map((doc) => MaintenancePaymentModel.fromJson(doc.data())).toList();
 
         return payments;
       },
@@ -421,9 +415,7 @@ class MaintenanceRepository extends IMaintenanceRepository {
             .where('user_line_number', isEqualTo: lineNumber)
             .get();
 
-        final payments = paymentsSnapshot.docs
-            .map((doc) => MaintenancePaymentModel.fromJson(doc.data()))
-            .toList();
+        final payments = paymentsSnapshot.docs.map((doc) => MaintenancePaymentModel.fromJson(doc.data())).toList();
 
         return payments;
       },
@@ -436,9 +428,8 @@ class MaintenanceRepository extends IMaintenanceRepository {
   }) {
     return Result<Map<String, dynamic>>().tryCatch(
       run: () async {
-        final paymentsSnapshot = await FirebaseFirestore.instance.maintenancePayments
-            .where('period_id', isEqualTo: periodId)
-            .get();
+        final paymentsSnapshot =
+            await FirebaseFirestore.instance.maintenancePayments.where('period_id', isEqualTo: periodId).get();
 
         int totalUsers = paymentsSnapshot.docs.length;
         int paidCount = 0;
@@ -485,9 +476,7 @@ class MaintenanceRepository extends IMaintenanceRepository {
           'total_amount': totalAmount,
           'total_collected': totalCollected,
           'total_pending': totalPending,
-          'collection_percentage': totalUsers > 0 
-              ? (paidCount / totalUsers) * 100 
-              : 0.0,
+          'collection_percentage': totalUsers > 0 ? (paidCount / totalUsers) * 100 : 0.0,
         };
       },
     );
@@ -536,9 +525,7 @@ class MaintenanceRepository extends IMaintenanceRepository {
 
               await periodRef.update({
                 'total_collected': totalCollected + paymentDifference,
-                'total_pending': totalPending - paymentDifference > 0 
-                    ? totalPending - paymentDifference 
-                    : 0.0,
+                'total_pending': totalPending - paymentDifference > 0 ? totalPending - paymentDifference : 0.0,
                 'updated_at': now,
               });
             }
@@ -547,6 +534,98 @@ class MaintenanceRepository extends IMaintenanceRepository {
 
         final updatedPaymentDoc = await paymentRef.get();
         return MaintenancePaymentModel.fromJson(updatedPaymentDoc.data()!);
+      },
+    );
+  }
+
+  @override
+  FirebaseResult<void> addUserToActiveMaintenancePeriods({
+    required String userId,
+    required String userName,
+    required String? userVillaNumber,
+    required String? userLineNumber,
+    required String? userRole,
+  }) {
+    return Result<void>().tryCatch(
+      run: () async {
+        // Skip admin users
+        if (userRole == 'admin' || userRole == 'ADMIN' || userRole == AppConstants.admins) {
+          return; // Don't add admin users to maintenance periods
+        }
+
+        final now = Timestamp.now();
+
+        // Get all active maintenance periods
+        final periodsResult = await getActiveMaintenancePeriods();
+
+        return periodsResult.fold(
+          (failure) {
+            throw Exception('Failed to get active maintenance periods: ${failure.message}');
+          },
+          (periods) async {
+            if (periods.isEmpty) {
+              // No active periods, nothing to do
+              return;
+            }
+
+            // Create a batch to add the user to all active periods
+            final batch = FirebaseFirestore.instance.batch();
+            final paymentsCollection = FirebaseFirestore.instance.maintenancePayments;
+
+            // For each active period, create a payment record for the user
+            for (final period in periods) {
+              if (period.id == null) continue;
+
+              final periodAmount = period.amount ?? 0.0;
+              final paymentDoc = paymentsCollection.doc();
+
+              batch.set(paymentDoc, {
+                'id': paymentDoc.id,
+                'period_id': period.id,
+                'user_id': userId,
+                'user_name': userName,
+                'user_villa_number': userVillaNumber,
+                'user_line_number': userLineNumber,
+                'collected_by': null,
+                'collector_name': null,
+                'amount': periodAmount,
+                'amount_paid': 0.0,
+                'payment_date': null,
+                'payment_method': null,
+                'status': 'pending',
+                'notes': null,
+                'receipt_number': null,
+                'created_at': now,
+                'updated_at': now,
+              });
+
+              // Update the period's total pending amount
+              final periodRef = FirebaseFirestore.instance.maintenance.doc(period.id);
+              final periodDoc = await periodRef.get();
+
+              if (periodDoc.exists) {
+                final totalPending = (periodDoc.data()!['total_pending'] as num?)?.toDouble() ?? 0.0;
+
+                batch.update(periodRef, {
+                  'total_pending': totalPending + periodAmount,
+                  'updated_at': now,
+                });
+              }
+            }
+
+            // Commit the batch
+            await batch.commit();
+
+            // Log activity
+            final activityDoc = FirebaseFirestore.instance.activities.doc();
+            await activityDoc.set({
+              'id': activityDoc.id,
+              'message': '👤 User $userName added to ${periods.length} active maintenance period(s)',
+              'type': 'user_added_to_maintenance',
+              'timestamp': now,
+            });
+          },
+        );
       },
     );
   }

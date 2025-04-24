@@ -8,4 +8,5 @@ extension FirestoreExtentionsX on FirebaseFirestore {
   FireStoreCollectionRefrence get maintenancePayments => collection('maintenance_payments');
   FireStoreCollectionRefrence get dashboardStats => collection('dashboard_stats');
   FireStoreCollectionRefrence get activities => collection('activities');
+  FireStoreCollectionRefrence get complaints => collection('complaints');
 }

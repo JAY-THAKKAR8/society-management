@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/dashboard_page.dart';
+import 'package:society_management/dashboard/line_head_dashboard.dart';
+import 'package:society_management/dashboard/line_member_dashboard.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
@@ -52,13 +55,23 @@ class _LoginPageState extends State<LoginPage> {
           if (result.isSuccess) {
             // Navigate based on user role
             if (result.user != null) {
-              // All users go to the dashboard for now, but you can add role-specific navigation here
-              context.pushAndRemoveUntil(const AdminDashboard());
+              // Route based on user role
+              if (result.user!.role == AppConstants.lineMember) {
+                // Line member dashboard
+                context.pushAndRemoveUntil(const LineMemberDashboard());
+              } else if (result.user!.role == AppConstants.lineLead) {
+                // Line head dashboard
+                context.pushAndRemoveUntil(const LineHeadDashboard());
+              } else {
+                // Admin dashboard
+                context.pushAndRemoveUntil(const AdminDashboard());
+              }
 
               // Show welcome message with role information
               Utility.toast(
                   message: 'Welcome ${result.user!.name}, you are logged in as ${result.user!.userRoleViewString}');
             } else {
+              // Default to admin dashboard if user data is missing
               context.pushAndRemoveUntil(const AdminDashboard());
             }
           } else {

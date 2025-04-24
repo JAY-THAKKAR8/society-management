@@ -5,7 +5,10 @@ import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/add_maintenance_period_page.dart';
+import 'package:society_management/maintenance/view/line_wise_maintenance_stats_page.dart';
 import 'package:society_management/maintenance/view/maintenance_payments_page.dart';
+import 'package:society_management/users/model/user_model.dart';
+import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
@@ -21,11 +24,42 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
   bool _isLoading = true;
   List<MaintenancePeriodModel> _periods = [];
   String? _errorMessage;
+  UserModel? _currentUser;
+  bool _isAdmin = false;
+  String? _selectedLine;
 
   @override
   void initState() {
     super.initState();
-    _fetchMaintenancePeriods();
+    _getCurrentUserAndFetchData();
+  }
+
+  Future<void> _getCurrentUserAndFetchData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final userRepository = getIt<IUserRepository>();
+      final userResult = await userRepository.getCurrentUser();
+
+      userResult.fold(
+        (failure) {
+          Utility.toast(message: failure.message);
+          _fetchMaintenancePeriods(); // Continue with fetching data even if user fetch fails
+        },
+        (user) {
+          setState(() {
+            _currentUser = user;
+            _isAdmin = user.role == 'ADMIN' || user.role?.toLowerCase() == 'admin';
+          });
+          _fetchMaintenancePeriods();
+        },
+      );
+    } catch (e) {
+      Utility.toast(message: 'Error fetching user data: $e');
+      _fetchMaintenancePeriods(); // Continue with fetching data even if user fetch fails
+    }
   }
 
   Future<void> _fetchMaintenancePeriods() async {
@@ -72,14 +106,17 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
           context.pop();
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await context.push(const AddMaintenancePeriodPage());
-          _fetchMaintenancePeriods();
-        },
-        backgroundColor: AppColors.buttonColor,
-        child: const Icon(Icons.add),
-      ),
+      // Only show add button for admin users
+      floatingActionButton: _isAdmin
+          ? FloatingActionButton(
+              onPressed: () async {
+                await context.push(const AddMaintenancePeriodPage());
+                _fetchMaintenancePeriods();
+              },
+              backgroundColor: AppColors.buttonColor,
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
@@ -99,39 +136,89 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
                     ],
                   ),
                 )
-              : _periods.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 64,
-                            color: AppColors.greyText,
+              : Column(
+                  children: [
+                    // Line filter for admins
+                    if (_isAdmin)
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'Filter by Line',
+                            border: OutlineInputBorder(),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No maintenance periods found',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Add a maintenance period to start collecting payments',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.greyText,
-                                ),
-                          ),
-                        ],
+                          value: _selectedLine,
+                          items: const [
+                            DropdownMenuItem<String>(
+                              value: null,
+                              child: Text('All Lines'),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: '1',
+                              child: Text('Line 1'),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: '2',
+                              child: Text('Line 2'),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: '3',
+                              child: Text('Line 3'),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: '4',
+                              child: Text('Line 4'),
+                            ),
+                            DropdownMenuItem<String>(
+                              value: '5',
+                              child: Text('Line 5'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedLine = value;
+                            });
+                          },
+                        ),
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _periods.length,
-                      itemBuilder: (context, index) {
-                        final period = _periods[index];
-                        return _buildPeriodCard(context, period);
-                      },
+                    // Main content
+                    Expanded(
+                      child: _periods.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 64,
+                                    color: AppColors.greyText,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No maintenance periods found',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Add a maintenance period to start collecting payments',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: AppColors.greyText,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _periods.length,
+                              itemBuilder: (context, index) {
+                                final period = _periods[index];
+                                return _buildPeriodCard(context, period);
+                              },
+                            ),
                     ),
+                  ],
+                ),
     );
   }
 
@@ -292,21 +379,43 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      // Navigate to edit page
-                      context.push(
-                        AddMaintenancePeriodPage(periodId: period.id),
-                      );
-                    },
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Edit'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  // Only show edit button for admin users
+                  if (_isAdmin)
+                    TextButton.icon(
+                      onPressed: () {
+                        // Navigate to edit page
+                        context.push(
+                          AddMaintenancePeriodPage(periodId: period.id),
+                        );
+                      },
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Edit'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
+                  if (_isAdmin) const SizedBox(width: 8),
+                  // Only show line stats button for admin users
+                  if (_isAdmin)
+                    TextButton.icon(
+                      onPressed: () {
+                        // Navigate to line stats page
+                        context.push(
+                          LineWiseMaintenanceStatsPage(
+                            periodId: period.id!,
+                            periodName: period.name ?? 'Unnamed Period',
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.analytics, size: 18),
+                      label: const Text('Line Stats'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.amber,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  if (_isAdmin) const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () {
                       // Navigate to payments page

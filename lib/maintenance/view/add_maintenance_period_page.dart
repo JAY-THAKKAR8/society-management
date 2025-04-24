@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
+import 'package:society_management/users/model/user_model.dart';
+import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
@@ -25,6 +27,8 @@ class _AddMaintenancePeriodPageState extends State<AddMaintenancePeriodPage> {
   final descriptionController = TextEditingController();
   final amountController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  UserModel? _currentUser;
+  bool _isAdmin = false;
 
   // First day of current month as default start date
   DateTime startDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
@@ -40,8 +44,43 @@ class _AddMaintenancePeriodPageState extends State<AddMaintenancePeriodPage> {
   @override
   void initState() {
     super.initState();
+    _checkUserAccess();
     if (widget.periodId != null) {
       _fetchPeriodDetails();
+    }
+  }
+
+  Future<void> _checkUserAccess() async {
+    try {
+      final userRepository = getIt<IUserRepository>();
+      final userResult = await userRepository.getCurrentUser();
+
+      userResult.fold(
+        (failure) {
+          // If we can't get the user, assume they're not an admin and redirect
+          Utility.toast(message: 'Access denied: Only admins can manage maintenance periods');
+          if (mounted) {
+            context.pop();
+          }
+        },
+        (user) {
+          setState(() {
+            _currentUser = user;
+            _isAdmin = user.role == 'ADMIN' || user.role?.toLowerCase() == 'admin';
+          });
+
+          // If not an admin, redirect back
+          if (!_isAdmin && mounted) {
+            Utility.toast(message: 'Access denied: Only admins can manage maintenance periods');
+            context.pop();
+          }
+        },
+      );
+    } catch (e) {
+      Utility.toast(message: 'Error checking user access: $e');
+      if (mounted) {
+        context.pop();
+      }
     }
   }
 

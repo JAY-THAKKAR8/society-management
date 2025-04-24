@@ -3,10 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:injectable/injectable.dart';
 import 'package:society_management/auth/repository/auth_repository.dart';
 import 'package:society_management/extentions/firestore_extentions.dart';
+import 'package:society_management/injector/injector.dart';
+import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/app_typednfs.dart';
 import 'package:society_management/utility/result.dart';
+import 'package:society_management/utility/utility.dart';
 
 @Injectable(as: IUserRepository)
 class UserRepository extends IUserRepository {
@@ -45,6 +48,21 @@ class UserRepository extends IUserRepository {
 
         if (!result.isSuccess || result.user == null) {
           throw Exception(result.errorMessage ?? 'Failed to create user');
+        }
+
+        // Add the new user to all active maintenance periods
+        try {
+          final maintenanceRepository = getIt<IMaintenanceRepository>();
+          await maintenanceRepository.addUserToActiveMaintenancePeriods(
+            userId: result.user!.id!,
+            userName: result.user!.name ?? 'Unknown',
+            userVillaNumber: result.user!.villNumber,
+            userLineNumber: result.user!.lineNumber,
+            userRole: result.user!.role,
+          );
+        } catch (e) {
+          // Log error but don't fail the user creation
+          Utility.toast(message: 'Error adding user to maintenance periods: $e');
         }
 
         return result.user!;

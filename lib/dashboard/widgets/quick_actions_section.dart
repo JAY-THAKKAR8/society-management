@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:society_management/dashboard/widgets/quick_action_button.dart';
 
 class QuickActionsSection extends StatelessWidget {
-  const QuickActionsSection({super.key, this.onAddUser, this.onAddExpense, this.onBroadcastNotice, this.onViewReport});
+  const QuickActionsSection(
+      {super.key,
+      this.onAddUser,
+      this.onAddExpense,
+      this.onBroadcastNotice,
+      this.onViewReport,
+      this.onManageMaintenance});
   final void Function()? onAddUser;
   final void Function()? onAddExpense;
   final void Function()? onBroadcastNotice;
   final void Function()? onViewReport;
+  final void Function()? onManageMaintenance;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +40,11 @@ class QuickActionsSection extends StatelessWidget {
               icon: Icons.attach_money,
               label: "Add Expense",
               onPressed: onAddExpense,
+            ),
+            QuickActionButton(
+              icon: Icons.calendar_month,
+              label: "Manage Maintenance",
+              onPressed: onManageMaintenance,
             ),
             QuickActionButton(
               icon: Icons.campaign,

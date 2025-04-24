@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
-import 'package:society_management/dashboard/widgets/quick_actions_section.dart';
+import 'package:society_management/dashboard/widgets/quick_actions_section_updated.dart';
 import 'package:society_management/dashboard/widgets/recent_activity_section.dart';
 import 'package:society_management/dashboard/widgets/summary_section.dart';
 import 'package:society_management/expenses/view/add_expense_page.dart';
+import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/view/user_management_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
@@ -114,6 +115,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     onAddExpense: () async {
                       // Navigate to add expense page and refresh when returning
                       await context.push(const AddExpensePage());
+                      // Refresh both dashboard sections
+                      _summaryKey.currentState?.refreshStats();
+                      _activityKey.currentState?.refreshActivities();
+                    },
+                    onManageMaintenance: () async {
+                      // Navigate to maintenance periods page and refresh when returning
+                      await context.push(const MaintenancePeriodsPage());
                       // Refresh both dashboard sections
                       _summaryKey.currentState?.refreshStats();
                       _activityKey.currentState?.refreshActivities();

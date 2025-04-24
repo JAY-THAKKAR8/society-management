@@ -7,16 +7,20 @@ import 'package:society_management/maintenance/model/maintenance_payment_model.d
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/record_payment_page.dart';
+import 'package:society_management/users/model/user_model.dart';
+import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
 
 class MaintenancePaymentsPage extends StatefulWidget {
   final String periodId;
+  final String? initialLineFilter;
 
   const MaintenancePaymentsPage({
     super.key,
     required this.periodId,
+    this.initialLineFilter,
   });
 
   @override
@@ -30,12 +34,51 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
   String? _errorMessage;
   late TabController _tabController;
   String? _selectedLine;
+  UserModel? _currentUser;
+  bool _isAdmin = false;
+  bool _isLineHead = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _fetchData();
+
+    // Set initial line filter if provided
+    if (widget.initialLineFilter != null) {
+      _selectedLine = widget.initialLineFilter;
+      // If initial line filter is provided, start on the By Line tab
+      _tabController.animateTo(1);
+    }
+
+    _getCurrentUserAndFetchData();
+  }
+
+  Future<void> _getCurrentUserAndFetchData() async {
+    try {
+      final userRepository = getIt<IUserRepository>();
+      final userResult = await userRepository.getCurrentUser();
+
+      userResult.fold(
+        (failure) {
+          Utility.toast(message: failure.message);
+          _fetchData(); // Continue with fetching data even if user fetch fails
+        },
+        (user) {
+          setState(() {
+            _currentUser = user;
+            _isAdmin = user.role == AppConstants.admins || user.role == 'admin';
+            _isLineHead = user.role == AppConstants.lineLead;
+            if (_isLineHead) {
+              _selectedLine = user.lineNumber; // Pre-select line for line heads
+            }
+          });
+          _fetchData();
+        },
+      );
+    } catch (e) {
+      Utility.toast(message: 'Error fetching user data: $e');
+      _fetchData(); // Continue with fetching data even if user fetch fails
+    }
   }
 
   @override
@@ -58,10 +101,15 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
         periodId: widget.periodId,
       );
 
-      // Fetch payments
-      final paymentsResult = await maintenanceRepository.getPaymentsForPeriod(
-        periodId: widget.periodId,
-      );
+      // Fetch payments based on user role
+      final paymentsResult = _isLineHead
+          ? await maintenanceRepository.getPaymentsForLine(
+              periodId: widget.periodId,
+              lineNumber: _currentUser?.lineNumber ?? '',
+            )
+          : await maintenanceRepository.getPaymentsForPeriod(
+              periodId: widget.periodId,
+            );
 
       periodResult.fold(
         (failure) {
@@ -86,7 +134,20 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
         },
         (payments) {
           setState(() {
-            _payments = payments;
+            // Filter out admin users from the payments list
+            _payments = payments.where((payment) {
+              // Check if the user is an admin based on role in payment data or name
+              final isAdmin = payment.userId == 'admin' ||
+                  payment.userName?.toLowerCase() == 'admin' ||
+                  payment.userId?.toLowerCase().contains('admin') == true ||
+                  payment.userName?.toLowerCase().contains('admin') == true;
+              return !isAdmin; // Only include non-admin users
+            }).toList();
+
+            // If user is a line head, pre-filter to their line
+            if (_isLineHead) {
+              _selectedLine = _currentUser?.lineNumber;
+            }
           });
         },
       );
@@ -143,22 +204,30 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
               : Column(
                   children: [
                     _buildPeriodSummary(),
-                    TabBar(
-                      controller: _tabController,
-                      tabs: const [
-                        Tab(text: 'All Payments'),
-                        Tab(text: 'By Line'),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
+                    // Show tabs only for admin users, line heads see only their line
+                    if (_isAdmin) ...[
+                      TabBar(
                         controller: _tabController,
-                        children: [
-                          _buildAllPaymentsList(),
-                          _buildLineFilteredList(),
+                        tabs: const [
+                          Tab(text: 'All Payments'),
+                          Tab(text: 'By Line'),
                         ],
                       ),
-                    ),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildAllPaymentsList(),
+                            _buildLineFilteredList(),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      // Line heads only see their line's payments
+                      Expanded(
+                        child: _buildAllPaymentsList(),
+                      ),
+                    ],
                   ],
                 ),
     );
@@ -167,8 +236,29 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
   Widget _buildPeriodSummary() {
     if (_period == null) return const SizedBox.shrink();
 
-    final collectionPercentage = _period!.amount != null && _period!.amount! > 0
-        ? (_period!.totalCollected / (_period!.totalCollected + _period!.totalPending)) * 100
+    // For line heads, calculate line-specific stats
+    double totalCollected = _period!.totalCollected;
+    double totalPending = _period!.totalPending;
+
+    if (_isLineHead && _currentUser?.lineNumber != null) {
+      // Calculate line-specific totals
+      totalCollected = 0;
+      totalPending = 0;
+
+      // Filter payments for this line head's line
+      final linePayments = _payments.where((payment) => payment.userLineNumber == _currentUser?.lineNumber).toList();
+
+      // Calculate totals
+      for (final payment in linePayments) {
+        totalCollected += payment.amountPaid;
+        if (payment.amount != null) {
+          totalPending += (payment.amount! - payment.amountPaid);
+        }
+      }
+    }
+
+    final collectionPercentage = _period!.amount != null && _period!.amount! > 0 && (totalCollected + totalPending) > 0
+        ? (totalCollected / (totalCollected + totalPending)) * 100
         : 0.0;
 
     return Container(
@@ -220,13 +310,18 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Collected: ₹${_period!.totalCollected.toStringAsFixed(2)}',
+                    'Collected: ₹${totalCollected.toStringAsFixed(2)}',
                     style: const TextStyle(color: Colors.green),
                   ),
                   Text(
-                    'Pending: ₹${_period!.totalPending.toStringAsFixed(2)}',
+                    'Pending: ₹${totalPending.toStringAsFixed(2)}',
                     style: const TextStyle(color: Colors.red),
                   ),
+                  if (_isLineHead)
+                    Text(
+                      _currentUser?.lineNumber != null ? 'Line ${_getLineText(_currentUser?.lineNumber)} only' : '',
+                      style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic),
+                    ),
                 ],
               ),
             ],

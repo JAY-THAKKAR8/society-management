@@ -8,6 +8,8 @@ abstract class IDashboardStatsRepository {
 
   FirebaseResult<DashboardStatsModel> getDashboardStats();
 
+  FirebaseResult<DashboardStatsModel> getLineStats(String lineNumber);
+
   FirebaseResult<void> incrementTotalMembers();
 
   FirebaseResult<void> incrementTotalExpenses(double amount);
