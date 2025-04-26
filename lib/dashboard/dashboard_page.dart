@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
-import 'package:society_management/dashboard/widgets/quick_actions_section_updated.dart';
+import 'package:society_management/dashboard/widgets/quick_actions_section_new.dart';
 import 'package:society_management/dashboard/widgets/recent_activity_section.dart';
 import 'package:society_management/dashboard/widgets/summary_section.dart';
 import 'package:society_management/expenses/view/add_expense_page.dart';

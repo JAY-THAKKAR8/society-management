@@ -5,6 +5,8 @@ import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/add_maintenance_period_page.dart';
+import 'package:society_management/maintenance/view/auto_maintenance_settings_page.dart';
+import 'package:society_management/maintenance/view/improved_active_maintenance_stats_page.dart';
 import 'package:society_management/maintenance/view/line_wise_maintenance_stats_page.dart';
 import 'package:society_management/maintenance/view/maintenance_payments_page.dart';
 import 'package:society_management/users/model/user_model.dart';
@@ -24,9 +26,8 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
   bool _isLoading = true;
   List<MaintenancePeriodModel> _periods = [];
   String? _errorMessage;
-  UserModel? _currentUser;
   bool _isAdmin = false;
-  String? _selectedLine;
+  UserModel? _currentUser;
 
   @override
   void initState() {
@@ -105,6 +106,24 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
         onBackTap: () {
           context.pop();
         },
+        actions: _isAdmin
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.analytics),
+                  tooltip: 'View All Active Statistics',
+                  onPressed: () {
+                    context.push(const ImprovedActiveMaintenanceStatsPage());
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: 'Auto Maintenance Settings',
+                  onPressed: () {
+                    context.push(const AutoMaintenanceSettingsPage());
+                  },
+                ),
+              ]
+            : null,
       ),
       // Only show add button for admin users
       floatingActionButton: _isAdmin
@@ -138,49 +157,6 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
                 )
               : Column(
                   children: [
-                    // Line filter for admins
-                    if (_isAdmin)
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'Filter by Line',
-                            border: OutlineInputBorder(),
-                          ),
-                          value: _selectedLine,
-                          items: const [
-                            DropdownMenuItem<String>(
-                              value: null,
-                              child: Text('All Lines'),
-                            ),
-                            DropdownMenuItem<String>(
-                              value: '1',
-                              child: Text('Line 1'),
-                            ),
-                            DropdownMenuItem<String>(
-                              value: '2',
-                              child: Text('Line 2'),
-                            ),
-                            DropdownMenuItem<String>(
-                              value: '3',
-                              child: Text('Line 3'),
-                            ),
-                            DropdownMenuItem<String>(
-                              value: '4',
-                              child: Text('Line 4'),
-                            ),
-                            DropdownMenuItem<String>(
-                              value: '5',
-                              child: Text('Line 5'),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedLine = value;
-                            });
-                          },
-                        ),
-                      ),
                     // Main content
                     Expanded(
                       child: _periods.isEmpty
@@ -243,7 +219,10 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
       ),
       child: InkWell(
         onTap: () {
-          context.push(MaintenancePaymentsPage(periodId: period.id!));
+          context.push(MaintenancePaymentsPage(
+            periodId: period.id!,
+            initialLineFilter: _isAdmin ? null : _currentUser?.lineNumber,
+          ));
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -377,7 +356,7 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
               ),
               const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   // Only show edit button for admin users
                   if (_isAdmin)
@@ -392,7 +371,7 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
                       label: const Text('Edit'),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                     ),
                   if (_isAdmin) const SizedBox(width: 8),
@@ -412,20 +391,23 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
                       label: const Text('Line Stats'),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.amber,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                     ),
                   if (_isAdmin) const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () {
                       // Navigate to payments page
-                      context.push(MaintenancePaymentsPage(periodId: period.id!));
+                      context.push(MaintenancePaymentsPage(
+                        periodId: period.id!,
+                        initialLineFilter: _isAdmin ? null : _currentUser?.lineNumber,
+                      ));
                     },
                     icon: const Icon(Icons.payments, size: 18),
                     label: const Text('Payments'),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
                 ],
