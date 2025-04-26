@@ -5,6 +5,7 @@ import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/dashboard_page.dart';
+import 'package:society_management/dashboard/line_head_dashboard.dart';
 import 'package:society_management/dashboard/line_member_dashboard.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -51,6 +52,12 @@ class _SplashPageState extends State<SplashPage> {
             // Route based on user role
             if (user.role == AppConstants.lineMember) {
               context.pushAndRemoveUntil(const LineMemberDashboard());
+            } else if (user.role == AppConstants.lineLead) {
+              context.pushAndRemoveUntil(const LineHeadDashboard());
+            } else if (user.role == AppConstants.lineHeadAndMember) {
+              // For combined role, default to Line Head dashboard
+              // User can choose different dashboard on next login
+              context.pushAndRemoveUntil(const LineHeadDashboard());
             } else {
               context.pushAndRemoveUntil(const AdminDashboard());
             }

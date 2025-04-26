@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
-import 'package:society_management/constants/app_constants.dart';
+import 'package:society_management/dashboard/line_member_dashboard.dart';
 import 'package:society_management/dashboard/widgets/line_head_activity_section.dart';
 import 'package:society_management/dashboard/widgets/line_head_quick_actions.dart';
 import 'package:society_management/dashboard/widgets/line_head_summary_section.dart';
@@ -123,8 +123,8 @@ class _LineHeadDashboardState extends State<LineHeadDashboard> {
     try {
       final user = await _authService.getCurrentUser();
       if (user != null) {
-        // Verify this is a line head
-        if (user.role != AppConstants.lineLead) {
+        // Verify this is a line head or line head + member
+        if (!user.isLineHead) {
           Utility.toast(message: 'Access denied: Not a line head');
           await _logout();
           return;
@@ -161,6 +161,37 @@ class _LineHeadDashboardState extends State<LineHeadDashboard> {
     }
   }
 
+  // Switch to member view for LINE_HEAD_MEMBER users
+  void _switchToMemberView() {
+    if (_currentUser?.role == 'LINE_HEAD_MEMBER') {
+      // Show a confirmation dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Switch to Member View'),
+          content: const Text(
+              'You are about to switch to your member dashboard where you can view your personal maintenance status and other member-specific features.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // Navigate to member dashboard
+                context.pushAndRemoveUntil(const LineMemberDashboard());
+              },
+              child: const Text('Switch'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,6 +202,13 @@ class _LineHeadDashboardState extends State<LineHeadDashboard> {
         ),
         backgroundColor: AppColors.primary,
         actions: [
+          // Show switch to member view button only for LINE_HEAD_MEMBER users
+          if (_currentUser?.role == 'LINE_HEAD_MEMBER')
+            IconButton(
+              icon: const Icon(Icons.switch_account),
+              onPressed: _switchToMemberView,
+              tooltip: 'Switch to Member View',
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {

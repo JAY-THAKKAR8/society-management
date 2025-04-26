@@ -39,6 +39,7 @@ class AppConstants {
   static const String firstYearResident = 'First year resident';
   static const String lineLead = 'LINE_HEAD';
   static const String lineMember = 'LINE_MEMBER';
+  static const String lineHeadAndMember = 'LINE_HEAD_MEMBER';
   static const String fourthYearResident = 'Fourth year resident';
   static const String localHolidays = 'Local holidays';
   static const String otherHolidays = 'Other holidays';

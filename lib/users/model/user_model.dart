@@ -144,8 +144,18 @@ class UserModel extends Equatable {
         return 'Line head';
       case AppConstants.lineMember:
         return 'Line member';
+      case AppConstants.lineHeadAndMember:
+        return 'Line head + Member';
       default:
         return 'Admin';
     }
+  }
+
+  bool get isLineHead {
+    return role == AppConstants.lineLead || role == AppConstants.lineHeadAndMember;
+  }
+
+  bool get isLineMember {
+    return role == AppConstants.lineMember || role == AppConstants.lineHeadAndMember;
   }
 }

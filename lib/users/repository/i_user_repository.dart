@@ -8,7 +8,7 @@ abstract class IUserRepository {
 
   FirebaseResult<List<UserModel>> getAllUsers();
 
-  FirebaseResult<UserModel> addCustomer({
+  FirebaseResult<UserModel> addUser({
     String? name,
     String? email,
     String? mobileNumber,

@@ -7,6 +7,7 @@ import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/dashboard_page.dart';
 import 'package:society_management/dashboard/line_head_dashboard.dart';
 import 'package:society_management/dashboard/line_member_dashboard.dart';
+import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
@@ -33,6 +34,36 @@ class _LoginPageState extends State<LoginPage> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _showRoleSelectionDialog(UserModel user) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Choose Dashboard'),
+          content: const Text(
+              'You have access to both Line Head and Line Member dashboards. Please select which one you want to use:'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.pushAndRemoveUntil(const LineHeadDashboard());
+              },
+              child: const Text('Line Head Dashboard'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.pushAndRemoveUntil(const LineMemberDashboard());
+              },
+              child: const Text('Line Member Dashboard'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _login() async {
@@ -62,6 +93,9 @@ class _LoginPageState extends State<LoginPage> {
               } else if (result.user!.role == AppConstants.lineLead) {
                 // Line head dashboard
                 context.pushAndRemoveUntil(const LineHeadDashboard());
+              } else if (result.user!.role == AppConstants.lineHeadAndMember) {
+                // Show dialog to choose dashboard
+                _showRoleSelectionDialog(result.user!);
               } else {
                 // Admin dashboard
                 context.pushAndRemoveUntil(const AdminDashboard());

@@ -13,6 +13,7 @@ class AppStrings {
     'Admin',
     'Line head',
     'Line member',
+    'Line head + Member',
   ];
 
   static List<String> lineList = [

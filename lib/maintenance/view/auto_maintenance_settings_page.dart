@@ -41,14 +41,14 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
     try {
       final amount = double.tryParse(_amountController.text.trim()) ?? 1000.0;
       final autoService = AutoMaintenanceService();
-      
+
       // Calculate next month's date for display
       final now = DateTime.now();
       final nextMonth = DateTime(now.year, now.month + 1, 1);
       final nextMonthName = DateFormat('MMMM yyyy').format(nextMonth);
-      
+
       final result = await autoService.createNextMonthPeriod(defaultAmount: amount);
-      
+
       result.fold(
         (failure) {
           setState(() {
@@ -163,14 +163,17 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(Icons.info_outline, color: Colors.blue),
                 const SizedBox(width: 8),
-                Text(
-                  'Automatic Maintenance Period Creation',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                Expanded(
+                  child: Text(
+                    'Automatic Maintenance Period Creation',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
                 ),
               ],
             ),

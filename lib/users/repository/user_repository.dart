@@ -18,7 +18,7 @@ class UserRepository extends IUserRepository {
   final AuthRepository _authRepository = AuthRepository();
 
   @override
-  FirebaseResult<UserModel> addCustomer(
+  FirebaseResult<UserModel> addUser(
       {String? name,
       String? email,
       String? mobileNumber,

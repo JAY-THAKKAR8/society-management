@@ -270,7 +270,10 @@ class AuthRepository {
 
       // Validate role based on business rules
       String validatedRole = role;
-      if (role != AppConstants.admin && role != AppConstants.lineLead && role != AppConstants.lineMember) {
+      if (role != AppConstants.admin &&
+          role != AppConstants.lineLead &&
+          role != AppConstants.lineMember &&
+          role != AppConstants.lineHeadAndMember) {
         // Default to line member if invalid role provided
         validatedRole = AppConstants.lineMember;
       }
@@ -284,6 +287,7 @@ class AuthRepository {
         lineNumber: lineNumber,
         villNumber: villNumber,
         mobileNumber: mobileNumber,
+        isVillaOpen: '1',
         createdAt: timestamp,
         updatedAt: timestamp,
         createdBy: creatorId,

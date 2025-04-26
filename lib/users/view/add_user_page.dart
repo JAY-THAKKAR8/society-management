@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -250,6 +252,7 @@ class _AddUserPageState extends State<AddUserPage> {
                       onTap: () {
                         if (widget.userId == null) {
                           createUser();
+                          log("${userRoleViewString}user role string");
                         } else {
                           editUser();
                         }
@@ -268,7 +271,7 @@ class _AddUserPageState extends State<AddUserPage> {
   Future<void> createUser() async {
     if (_formKey.currentState!.validate()) {
       isButtonLoading.value = true;
-      final response = await getIt<IUserRepository>().addCustomer(
+      final response = await getIt<IUserRepository>().addUser(
         name: nameController.text.trim(),
         email: emailController.text.trim(),
         mobileNumber: mobileNumberController.text.trim(),
@@ -326,6 +329,8 @@ class _AddUserPageState extends State<AddUserPage> {
         return AppConstants.lineLead;
       case 'Line member':
         return AppConstants.lineMember;
+      case 'Line head + Member':
+        return AppConstants.lineHeadAndMember;
       default:
         return AppConstants.admin;
     }

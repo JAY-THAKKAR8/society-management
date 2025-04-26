@@ -4,7 +4,7 @@ import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/complaints/view/add_complaint_page.dart';
 import 'package:society_management/complaints/view/my_complaints_page.dart';
 import 'package:society_management/constants/app_colors.dart';
-import 'package:society_management/constants/app_constants.dart';
+import 'package:society_management/dashboard/line_head_dashboard.dart';
 import 'package:society_management/dashboard/widgets/line_member_quick_actions.dart';
 import 'package:society_management/dashboard/widgets/line_member_summary_section.dart';
 import 'package:society_management/maintenance/view/my_maintenance_status_page.dart';
@@ -34,8 +34,8 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
     try {
       final user = await _authService.getCurrentUser();
       if (user != null) {
-        // Verify this is a line member
-        if (user.role != AppConstants.lineMember) {
+        // Verify this is a line member or line head + member
+        if (!user.isLineMember) {
           Utility.toast(message: 'Access denied: Not a line member');
           await _logout();
           return;
@@ -72,6 +72,37 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
     }
   }
 
+  // Switch to line head view for LINE_HEAD_MEMBER users
+  void _switchToLineHeadView() {
+    if (_currentUser?.role == 'LINE_HEAD_MEMBER') {
+      // Show a confirmation dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Switch to Line Head View'),
+          content: const Text(
+              'You are about to switch to your line head dashboard where you can manage maintenance collections and other line head responsibilities.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // Navigate to line head dashboard
+                context.pushAndRemoveUntil(const LineHeadDashboard());
+              },
+              child: const Text('Switch'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,6 +113,13 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
         ),
         backgroundColor: AppColors.primary,
         actions: [
+          // Show switch to line head view button only for LINE_HEAD_MEMBER users
+          if (_currentUser?.role == 'LINE_HEAD_MEMBER')
+            IconButton(
+              icon: const Icon(Icons.switch_account),
+              onPressed: _switchToLineHeadView,
+              tooltip: 'Switch to Line Head View',
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,

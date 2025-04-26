@@ -53,6 +53,7 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
           setState(() {
             _currentUser = user;
             _isAdmin = user.role == 'ADMIN' || user.role?.toLowerCase() == 'admin';
+            // Make sure LINE_HEAD_MEMBER is not treated as admin
           });
           _fetchMaintenancePeriods();
         },
@@ -81,11 +82,16 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
           });
           Utility.toast(message: failure.message);
         },
-        (periods) {
-          setState(() {
-            _periods = periods;
-            _isLoading = false;
-          });
+        (periods) async {
+          // If user is a line head (including LINE_HEAD_MEMBER), fetch line-specific data for each period
+          if (_currentUser != null && _currentUser!.isLineHead && _currentUser!.role != 'ADMIN') {
+            await _updatePeriodsWithLineSpecificData(periods);
+          } else {
+            setState(() {
+              _periods = periods;
+              _isLoading = false;
+            });
+          }
         },
       );
     } catch (e) {
@@ -97,11 +103,72 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
     }
   }
 
+  Future<void> _updatePeriodsWithLineSpecificData(List<MaintenancePeriodModel> periods) async {
+    try {
+      final maintenanceRepository = getIt<IMaintenanceRepository>();
+      final updatedPeriods = <MaintenancePeriodModel>[];
+
+      for (final period in periods) {
+        if (period.id == null) {
+          updatedPeriods.add(period);
+          continue;
+        }
+
+        // Get payments for this line head's line
+        final paymentsResult = await maintenanceRepository.getPaymentsForLine(
+          periodId: period.id!,
+          lineNumber: _currentUser!.lineNumber ?? '',
+        );
+
+        paymentsResult.fold(
+          (failure) {
+            // If we can't get payments, just use the original period
+            updatedPeriods.add(period);
+          },
+          (payments) {
+            // Calculate line-specific totals
+            double totalCollected = 0.0;
+            double totalPending = 0.0;
+
+            for (final payment in payments) {
+              final amount = payment.amount ?? 0.0;
+              final amountPaid = payment.amountPaid;
+
+              totalCollected += amountPaid;
+              totalPending += (amount - amountPaid);
+            }
+
+            // Create a new period with line-specific totals
+            final updatedPeriod = period.copyWith(
+              totalCollected: totalCollected,
+              totalPending: totalPending,
+            );
+
+            updatedPeriods.add(updatedPeriod);
+          },
+        );
+      }
+
+      setState(() {
+        _periods = updatedPeriods;
+        _isLoading = false;
+      });
+    } catch (e) {
+      Utility.toast(message: 'Error calculating line-specific data: $e');
+      setState(() {
+        _periods = periods;
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'Maintenance Periods',
+        title: _currentUser != null && _currentUser!.isLineHead && _currentUser!.role != 'ADMIN'
+            ? 'Maintenance Periods - ${_currentUser?.userLineViewString ?? ''}'
+            : 'Maintenance Periods',
         showDivider: true,
         onBackTap: () {
           context.pop();
@@ -317,6 +384,28 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
                           ),
                     ),
                   ),
+                  if (_currentUser != null && _currentUser!.isLineHead && _currentUser!.role != 'ADMIN')
+                    Expanded(
+                      child: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withAlpha(50),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${_currentUser?.userLineViewString ?? ''} only',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -354,6 +443,18 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
                   ),
                 ],
               ),
+              if (_currentUser != null && _currentUser!.isLineHead && _currentUser!.role != 'ADMIN')
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Note: Amounts shown are for ${_currentUser?.userLineViewString ?? ''} only',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.blue,
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                        ),
+                  ),
+                ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
