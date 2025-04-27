@@ -3,6 +3,19 @@ import 'package:equatable/equatable.dart';
 
 /// Represents a maintenance collection period
 class MaintenancePeriodModel extends Equatable {
+  final String? id;
+  final String? name;
+  final String? description;
+  final double? amount;
+  final String? startDate;
+  final String? endDate;
+  final String? dueDate;
+  final bool isActive;
+  final double totalCollected;
+  final double totalPending;
+  final String? createdAt;
+  final String? updatedAt;
+
   const MaintenancePeriodModel({
     this.id,
     this.name,
@@ -19,44 +32,43 @@ class MaintenancePeriodModel extends Equatable {
   });
 
   factory MaintenancePeriodModel.fromJson(Map<String, dynamic> json) {
-    return MaintenancePeriodModel(
-      id: json['id'] as String?,
-      name: json['name'] as String?,
-      description: json['description'] as String?,
-      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-      startDate: json['start_date'] != null 
-          ? (json['start_date'] as Timestamp).toDate().toString() 
-          : null,
-      endDate: json['end_date'] != null 
-          ? (json['end_date'] as Timestamp).toDate().toString() 
-          : null,
-      dueDate: json['due_date'] != null 
-          ? (json['due_date'] as Timestamp).toDate().toString() 
-          : null,
-      isActive: json['is_active'] as bool? ?? true,
-      totalCollected: (json['total_collected'] as num?)?.toDouble() ?? 0.0,
-      totalPending: (json['total_pending'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['created_at'] != null 
-          ? (json['created_at'] as Timestamp).toDate().toString() 
-          : null,
-      updatedAt: json['updated_at'] != null 
-          ? (json['updated_at'] as Timestamp).toDate().toString() 
-          : null,
-    );
-  }
+    // Handle Timestamp conversion safely
+    String? convertTimestampToString(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate().toString();
+      return null;
+    }
 
-  final String? id;
-  final String? name;
-  final String? description;
-  final double? amount;
-  final String? startDate;
-  final String? endDate;
-  final String? dueDate;
-  final bool isActive;
-  final double totalCollected;
-  final double totalPending;
-  final String? createdAt;
-  final String? updatedAt;
+    // Safe cast to String
+    String? safeString(dynamic value) {
+      if (value == null) return null;
+      return value.toString();
+    }
+
+    try {
+      return MaintenancePeriodModel(
+        id: safeString(json['id']),
+        name: safeString(json['name']),
+        description: safeString(json['description']),
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+        startDate: convertTimestampToString(json['start_date']),
+        endDate: convertTimestampToString(json['end_date']),
+        dueDate: convertTimestampToString(json['due_date']),
+        isActive: json['is_active'] as bool? ?? true,
+        totalCollected: (json['total_collected'] as num?)?.toDouble() ?? 0.0,
+        totalPending: (json['total_pending'] as num?)?.toDouble() ?? 0.0,
+        createdAt: convertTimestampToString(json['created_at']),
+        updatedAt: convertTimestampToString(json['updated_at']),
+      );
+    } catch (e) {
+      // Fallback to a default model if parsing fails
+      return const MaintenancePeriodModel(
+        isActive: true,
+        totalCollected: 0.0,
+        totalPending: 0.0,
+      );
+    }
+  }
 
   MaintenancePeriodModel copyWith({
     String? id,

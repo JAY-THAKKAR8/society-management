@@ -27,39 +27,62 @@ class MaintenancePaymentModel extends Equatable {
     this.status = PaymentStatus.pending,
     this.notes,
     this.receiptNumber,
+    this.checkNumber,
+    this.transactionId,
     this.createdAt,
     this.updatedAt,
   });
 
   factory MaintenancePaymentModel.fromJson(Map<String, dynamic> json) {
-    return MaintenancePaymentModel(
-      id: json['id'] as String?,
-      periodId: json['period_id'] as String?,
-      userId: json['user_id'] as String?,
-      userName: json['user_name'] as String?,
-      userVillaNumber: json['user_villa_number'] as String?,
-      userLineNumber: json['user_line_number'] as String?,
-      collectedBy: json['collected_by'] as String?,
-      collectorName: json['collector_name'] as String?,
-      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-      amountPaid: (json['amount_paid'] as num?)?.toDouble() ?? 0.0,
-      paymentDate: json['payment_date'] != null 
-          ? (json['payment_date'] as Timestamp).toDate().toString() 
-          : null,
-      paymentMethod: json['payment_method'] as String?,
-      status: _statusFromString(json['status'] as String?),
-      notes: json['notes'] as String?,
-      receiptNumber: json['receipt_number'] as String?,
-      createdAt: json['created_at'] != null 
-          ? (json['created_at'] as Timestamp).toDate().toString() 
-          : null,
-      updatedAt: json['updated_at'] != null 
-          ? (json['updated_at'] as Timestamp).toDate().toString() 
-          : null,
-    );
+    // Handle Timestamp conversion safely
+    String? convertTimestampToString(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate().toString();
+      return null;
+    }
+
+    // Safe cast to String
+    String? safeString(dynamic value) {
+      if (value == null) return null;
+      return value.toString();
+    }
+
+    try {
+      return MaintenancePaymentModel(
+        id: safeString(json['id']),
+        periodId: safeString(json['period_id']),
+        userId: safeString(json['user_id']),
+        userName: safeString(json['user_name']),
+        userVillaNumber: safeString(json['user_villa_number']),
+        userLineNumber: safeString(json['user_line_number']),
+        collectedBy: safeString(json['collected_by']),
+        collectorName: safeString(json['collector_name']),
+        amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+        amountPaid: (json['amount_paid'] as num?)?.toDouble() ?? 0.0,
+        paymentDate: convertTimestampToString(json['payment_date']),
+        paymentMethod: safeString(json['payment_method']),
+        status: _statusFromString(safeString(json['status'])),
+        notes: safeString(json['notes']),
+        receiptNumber: safeString(json['receipt_number']),
+        // Handle new fields that might not exist in older records
+        checkNumber: safeString(json['check_number']),
+        transactionId: safeString(json['transaction_id']),
+        createdAt: convertTimestampToString(json['created_at']),
+        updatedAt: convertTimestampToString(json['updated_at']),
+      );
+    } catch (e) {
+      // Fallback to a default model if parsing fails
+      // Log error but continue with default model
+      return const MaintenancePaymentModel(
+        status: PaymentStatus.pending,
+        amountPaid: 0.0,
+      );
+    }
   }
 
   static PaymentStatus _statusFromString(String? status) {
+    if (status == null) return PaymentStatus.pending;
+
     switch (status) {
       case 'paid':
         return PaymentStatus.paid;
@@ -68,6 +91,7 @@ class MaintenancePaymentModel extends Equatable {
       case 'overdue':
         return PaymentStatus.overdue;
       case 'pending':
+        return PaymentStatus.pending;
       default:
         return PaymentStatus.pending;
     }
@@ -82,7 +106,6 @@ class MaintenancePaymentModel extends Equatable {
       case PaymentStatus.overdue:
         return 'overdue';
       case PaymentStatus.pending:
-      default:
         return 'pending';
     }
   }
@@ -102,6 +125,8 @@ class MaintenancePaymentModel extends Equatable {
   final PaymentStatus status;
   final String? notes;
   final String? receiptNumber;
+  final String? checkNumber;
+  final String? transactionId;
   final String? createdAt;
   final String? updatedAt;
 
@@ -121,6 +146,8 @@ class MaintenancePaymentModel extends Equatable {
     PaymentStatus? status,
     String? notes,
     String? receiptNumber,
+    String? checkNumber,
+    String? transactionId,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -140,6 +167,8 @@ class MaintenancePaymentModel extends Equatable {
       status: status ?? this.status,
       notes: notes ?? this.notes,
       receiptNumber: receiptNumber ?? this.receiptNumber,
+      checkNumber: checkNumber ?? this.checkNumber,
+      transactionId: transactionId ?? this.transactionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -161,6 +190,8 @@ class MaintenancePaymentModel extends Equatable {
         'status': _statusToString(status),
         'notes': notes,
         'receipt_number': receiptNumber,
+        'check_number': checkNumber,
+        'transaction_id': transactionId,
         'created_at': createdAt,
         'updated_at': updatedAt,
       };
@@ -182,6 +213,8 @@ class MaintenancePaymentModel extends Equatable {
         status,
         notes,
         receiptNumber,
+        checkNumber,
+        transactionId,
         createdAt,
         updatedAt,
       ];

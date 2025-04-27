@@ -11,6 +11,7 @@ import 'package:society_management/maintenance/view/line_maintenance_details_pag
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
+import 'package:society_management/widget/trading_style_button.dart';
 
 class ImprovedActiveMaintenanceStatsPage extends StatefulWidget {
   const ImprovedActiveMaintenanceStatsPage({super.key});
@@ -240,9 +241,11 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
                         style: const TextStyle(color: Colors.red),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      TradingStyleButton(
+                        text: 'Retry',
                         onPressed: _fetchData,
-                        child: const Text('Retry'),
+                        leadingIcon: Icons.refresh,
+                        showChartIcons: false,
                       ),
                     ],
                   ),
@@ -262,20 +265,30 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
       onRefresh: _fetchData,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildActivePeriodsSummary(),
-            const SizedBox(height: 24),
-            Text(
-              'Line-wise Collection Status',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            ..._buildLineStatCards(),
-          ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height - 100, // Subtract app bar height
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildActivePeriodsSummary(),
+              const SizedBox(height: 24),
+              Text(
+                'Line-wise Collection Status',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              // Wrap the dynamic content in a Column with proper constraints
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: _buildLineStatCards(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -498,20 +511,12 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
                   ],
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Navigate to line details page
-                      _navigateToLineDetails(lineNumber);
-                    },
-                    icon: const Icon(Icons.visibility),
-                    label: const Text('View Line Details'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonColor,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
+                TradingStyleButton(
+                  text: 'View Details',
+                  onPressed: () {
+                    // Navigate to line details page
+                    _navigateToLineDetails(lineNumber);
+                  },
                 ),
               ],
             ),

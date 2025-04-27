@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/constants/app_colors.dart';
-import 'package:society_management/utility/extentions/colors_extnetions.dart';
 import 'package:society_management/widget/custom_progress_indecator.dart';
+import 'package:society_management/widget/trading_style_button.dart';
 
 class CommonButton extends StatelessWidget {
   const CommonButton({
@@ -36,50 +36,38 @@ class CommonButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(
-        maxWidth: width ?? double.infinity,
-        maxHeight: height ?? double.infinity,
-      ),
-      decoration: BoxDecoration(
-        border: showBorder ? Border.all(color: AppColors.buttonColor, width: 1) : null,
-        borderRadius: BorderRadius.circular(borderRadius ?? 100),
-        boxShadow: removeShadow
-            ? null
-            : [
-                BoxShadow(
-                  color: AppColors.buttonColor.withOpacity2(0.31),
-                  spreadRadius: 0,
-                  blurRadius: 14,
-                  offset: const Offset(0, 7),
-                ),
-              ],
-      ),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          padding: padding ?? EdgeInsets.symmetric(vertical: isLoading ? 14 : 15),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius ?? 100.0)),
+    if (isLoading) {
+      return SizedBox(
+        width: width,
+        height: height,
+        child: TradingStyleButton(
+          text: text ?? '',
+          onPressed: () {}, // Disabled during loading
+          showChartIcons: false,
+          startColor: backgroundColor,
+          height: height ?? 50,
+          child: const SizedBox(
+            height: 24,
+            width: 24,
+            child: CustomProgressIndecator(
+              color: AppColors.white,
+              strokeWidth: 3,
+            ),
+          ),
         ),
-        onPressed: isLoading ? () {} : onTap,
-        child: isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CustomProgressIndecator(
-                  color: AppColors.white,
-                  strokeWidth: 3,
-                ),
-              )
-            : text != null
-                ? Text(
-                    text ?? '',
-                    style: textStyle ??
-                        Theme.of(context).elevatedButtonTheme.style?.textStyle?.resolve({})?.copyWith(
-                          color: textColor,
-                        ),
-                  )
-                : icon,
+      );
+    }
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: TradingStyleButton(
+        text: text ?? '',
+        onPressed: onTap ?? () {},
+        showChartIcons: false,
+        startColor: backgroundColor,
+        height: height ?? 50,
+        child: icon,
       ),
     );
   }

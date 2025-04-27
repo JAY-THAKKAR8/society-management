@@ -61,6 +61,13 @@ abstract class IMaintenanceRepository {
     PaymentStatus status,
     String? notes,
     String? receiptNumber,
+    String? checkNumber,
+    String? transactionId,
+  });
+
+  /// Get a specific maintenance period by ID
+  FirebaseResult<MaintenancePeriodModel> getMaintenancePeriodById({
+    required String periodId,
   });
 
   /// Get all payments for a period

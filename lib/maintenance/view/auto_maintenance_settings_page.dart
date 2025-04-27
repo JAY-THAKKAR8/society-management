@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/maintenance/service/auto_maintenance_service.dart';
+import 'package:society_management/maintenance/service/maintenance_background_service.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
@@ -18,6 +19,7 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController(text: '1000.00');
   bool _isLoading = false;
+  bool _isForceCheckLoading = false;
   String? _errorMessage;
   String? _successMessage;
 
@@ -25,6 +27,31 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
   void dispose() {
     _amountController.dispose();
     super.dispose();
+  }
+
+  Future<void> _forceAutomaticCheck() async {
+    setState(() {
+      _isForceCheckLoading = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    try {
+      final backgroundService = MaintenanceBackgroundService();
+      await backgroundService.forceCheck();
+
+      setState(() {
+        _isForceCheckLoading = false;
+        _successMessage = 'Automatic maintenance check completed successfully';
+      });
+      Utility.toast(message: 'Automatic check completed');
+    } catch (e) {
+      setState(() {
+        _isForceCheckLoading = false;
+        _errorMessage = e.toString();
+      });
+      Utility.toast(message: 'Error: $e');
+    }
   }
 
   Future<void> _createNextMonthPeriod() async {
@@ -86,65 +113,77 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInfoCard(),
-              const SizedBox(height: 24),
-              _buildSettingsCard(),
-              const SizedBox(height: 24),
-              if (_errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height - 100, // Subtract app bar height
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoCard(),
                 const SizedBox(height: 24),
-              ],
-              if (_successMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle_outline, color: Colors.green),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _successMessage!,
-                          style: const TextStyle(color: Colors.green),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildSettingsCard(),
                 const SizedBox(height: 24),
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withAlpha(25),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (_successMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withAlpha(25),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _successMessage!,
+                            style: const TextStyle(color: Colors.green),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                CommonButton(
+                  text: 'Create Next Month Period Now',
+                  isLoading: _isLoading,
+                  onTap: _createNextMonthPeriod,
+                ),
+                const SizedBox(height: 16),
+                CommonButton(
+                  text: 'Force Automatic Check Now',
+                  isLoading: _isForceCheckLoading,
+                  onTap: _forceAutomaticCheck,
+                  backgroundColor: Colors.blue,
+                ),
               ],
-              CommonButton(
-                text: 'Create Next Month Period Now',
-                isLoading: _isLoading,
-                onTap: _createNextMonthPeriod,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -179,17 +218,22 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
             ),
             const SizedBox(height: 16),
             Text(
-              'The system is configured to automatically create a new maintenance period on the 25th of each month for the next month.',
+              'The system is configured to automatically create a new maintenance period on the 26th of each month for the next month without any user interaction.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'For example, on June 25th, a new period for July will be created automatically.',
+              'For example, on June 26th, a new period for July will be created automatically in the background.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'You can also manually create the next month\'s period using the button below.',
+              'The system will also check for any missed periods when the app starts up to ensure no months are skipped.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You can also manually create the next month\'s period using the button below if needed.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],

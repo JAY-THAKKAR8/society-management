@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/widget/trading_style_button.dart';
 
 class QuickActionButton extends StatelessWidget {
   final IconData icon;
@@ -15,16 +15,11 @@ class QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
+    return TradingStyleButton(
+      text: label,
       onPressed: onPressed ?? () {},
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.buttonColor,
-        foregroundColor: AppColors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      icon: Icon(icon, size: 20),
-      label: Text(label),
+      leadingIcon: icon,
+      showChartIcons: false,
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
+import 'package:society_management/maintenance/service/receipt_service.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -32,6 +33,8 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
   final amountController = TextEditingController();
   final notesController = TextEditingController();
   final receiptController = TextEditingController();
+  final checkNumberController = TextEditingController();
+  final transactionIdController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   DateTime paymentDate = DateTime.now();
@@ -78,20 +81,38 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
 
   void _initializeData() {
     // Pre-fill with existing data if payment is partially paid
-    if (widget.payment.status == PaymentStatus.partiallyPaid ||
-        widget.payment.status == PaymentStatus.paid) {
+    if (widget.payment.status == PaymentStatus.partiallyPaid || widget.payment.status == PaymentStatus.paid) {
       amountController.text = widget.payment.amountPaid.toString();
-      
+
       if (widget.payment.paymentDate != null) {
         paymentDate = DateTime.parse(widget.payment.paymentDate!);
       }
-      
+
       selectedPaymentMethod = widget.payment.paymentMethod;
       notesController.text = widget.payment.notes ?? '';
       receiptController.text = widget.payment.receiptNumber ?? '';
+      checkNumberController.text = widget.payment.checkNumber ?? '';
+      transactionIdController.text = widget.payment.transactionId ?? '';
     } else {
       // For new payments, set the full amount
       amountController.text = widget.payment.amount?.toString() ?? '0';
+
+      // Generate a receipt number for new payments
+      _generateReceiptNumber();
+    }
+  }
+
+  Future<void> _generateReceiptNumber() async {
+    try {
+      // Only auto-generate receipt number for new payments
+      if (widget.payment.status == PaymentStatus.pending) {
+        final receiptNumber = await ReceiptService.generateReceiptNumber();
+        setState(() {
+          receiptController.text = receiptNumber;
+        });
+      }
+    } catch (e) {
+      Utility.toast(message: 'Error generating receipt number: $e');
     }
   }
 
@@ -100,6 +121,8 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
     amountController.dispose();
     notesController.dispose();
     receiptController.dispose();
+    checkNumberController.dispose();
+    transactionIdController.dispose();
     super.dispose();
   }
 
@@ -190,13 +213,72 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
                 },
               ),
               const Gap(20),
+              // Conditional fields based on payment method
+              if (selectedPaymentMethod == 'Check') ...[
+                AppTextFormField(
+                  controller: checkNumberController,
+                  title: 'Check Number*',
+                  hintText: 'Enter check number',
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(50),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter check number';
+                    }
+                    return null;
+                  },
+                ),
+                const Gap(20),
+              ],
+              if (selectedPaymentMethod == 'UPI') ...[
+                AppTextFormField(
+                  controller: transactionIdController,
+                  title: 'Transaction ID*',
+                  hintText: 'Enter UPI transaction ID',
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(50),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter transaction ID';
+                    }
+                    return null;
+                  },
+                ),
+                const Gap(20),
+              ],
+              if (selectedPaymentMethod == 'Bank Transfer') ...[
+                AppTextFormField(
+                  controller: transactionIdController,
+                  title: 'Transaction Reference*',
+                  hintText: 'Enter bank transaction reference',
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(50),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter transaction reference';
+                    }
+                    return null;
+                  },
+                ),
+                const Gap(20),
+              ],
               AppTextFormField(
                 controller: receiptController,
-                title: 'Receipt Number',
-                hintText: 'Optional receipt number',
+                title: 'Receipt Number*',
+                hintText: 'Receipt number will be auto-generated',
+                readOnly: true,
                 inputFormatters: [
                   LengthLimitingTextInputFormatter(50),
                 ],
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Receipt number is required';
+                  }
+                  return null;
+                },
               ),
               const Gap(20),
               AppTextFormField(
@@ -368,6 +450,16 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
           status = PaymentStatus.paid;
         }
 
+        // Get payment method specific details
+        String? checkNumber;
+        String? transactionId;
+
+        if (selectedPaymentMethod == 'Check') {
+          checkNumber = checkNumberController.text.trim();
+        } else if (selectedPaymentMethod == 'UPI' || selectedPaymentMethod == 'Bank Transfer') {
+          transactionId = transactionIdController.text.trim();
+        }
+
         final result = await maintenanceRepository.recordPayment(
           periodId: widget.periodId,
           userId: widget.payment.userId!,
@@ -383,6 +475,8 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
           status: status,
           notes: notesController.text.trim(),
           receiptNumber: receiptController.text.trim(),
+          checkNumber: checkNumber,
+          transactionId: transactionId,
         );
 
         result.fold(
@@ -390,10 +484,45 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
             isLoading.value = false;
             Utility.toast(message: failure.message);
           },
-          (_) {
+          (payment) async {
+            // Generate and share receipt
+            try {
+              // Get period details
+              final periodResult = await maintenanceRepository.getMaintenancePeriodById(periodId: widget.periodId);
+
+              periodResult.fold(
+                (failure) {
+                  Utility.toast(
+                      message:
+                          'Payment recorded successfully, but error getting period details for receipt: ${failure.message}');
+                },
+                (period) async {
+                  try {
+                    // Generate PDF receipt
+                    final receiptFile = await ReceiptService.generateReceiptPDF(
+                      payment: payment,
+                      period: period,
+                      paymentMethod: selectedPaymentMethod!,
+                      checkNumber: checkNumber,
+                      upiTransactionId: transactionId,
+                    );
+
+                    // Share receipt with user
+                    await ReceiptService.shareReceipt(receiptFile);
+                  } catch (e) {
+                    Utility.toast(message: 'Payment recorded successfully, but error generating receipt: $e');
+                  }
+                },
+              );
+            } catch (e) {
+              Utility.toast(message: 'Payment recorded successfully, but error with receipt: $e');
+            }
+
             isLoading.value = false;
             Utility.toast(message: 'Payment recorded successfully');
-            context.pop();
+            if (mounted) {
+              context.pop();
+            }
           },
         );
       } catch (e) {

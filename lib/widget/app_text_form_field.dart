@@ -104,7 +104,7 @@ class AppTextFormField extends StatelessWidget {
               hintText: hintText,
               suffixIcon: suffixIcon,
               prefixIcon: prefixIcon,
-              prefixIconConstraints: BoxConstraints(maxWidth: maxWidthOfPrefix ?? double.infinity),
+              prefixIconConstraints: prefixIcon != null ? BoxConstraints(maxWidth: maxWidthOfPrefix ?? 48.0) : null,
               contentPadding: contentPadding,
               hintStyle: hintStyle,
             ),

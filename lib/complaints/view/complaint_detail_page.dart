@@ -18,7 +18,7 @@ class ComplaintDetailPage extends StatelessWidget {
     // Format dates
     String formattedCreatedDate = 'Unknown date';
     String formattedUpdatedDate = 'Unknown date';
-    
+
     if (complaint.createdAt != null) {
       try {
         final date = DateTime.parse(complaint.createdAt!);
@@ -27,7 +27,7 @@ class ComplaintDetailPage extends StatelessWidget {
         // Use default value
       }
     }
-    
+
     if (complaint.updatedAt != null) {
       try {
         final date = DateTime.parse(complaint.updatedAt!);
@@ -64,17 +64,22 @@ class ComplaintDetailPage extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusCard(context, statusColor),
-            const SizedBox(height: 16),
-            _buildComplaintDetailsCard(context, formattedCreatedDate, formattedUpdatedDate),
-            if (complaint.adminResponse != null) ...[
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height - 100, // Subtract app bar height
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStatusCard(context, statusColor),
               const SizedBox(height: 16),
-              _buildAdminResponseCard(context),
+              _buildComplaintDetailsCard(context, formattedCreatedDate, formattedUpdatedDate),
+              if (complaint.adminResponse != null) ...[
+                const SizedBox(height: 16),
+                _buildAdminResponseCard(context),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -94,7 +99,7 @@ class ComplaintDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.2),
+                color: statusColor.withAlpha(50),
                 shape: BoxShape.circle,
               ),
               child: Icon(

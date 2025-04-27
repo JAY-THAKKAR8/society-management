@@ -79,6 +79,8 @@ class MaintenanceRepository extends IMaintenanceRepository {
             'status': 'pending',
             'notes': null,
             'receipt_number': null,
+            'check_number': null,
+            'transaction_id': null,
             'created_at': now,
             'updated_at': now,
           });
@@ -117,12 +119,29 @@ class MaintenanceRepository extends IMaintenanceRepository {
   FirebaseResult<List<MaintenancePeriodModel>> getAllMaintenancePeriods() {
     return Result<List<MaintenancePeriodModel>>().tryCatch(
       run: () async {
-        final periodsSnapshot =
-            await FirebaseFirestore.instance.maintenance.orderBy('created_at', descending: true).get();
+        try {
+          final periodsSnapshot =
+              await FirebaseFirestore.instance.maintenance.orderBy('created_at', descending: true).get();
 
-        final periods = periodsSnapshot.docs.map((doc) => MaintenancePeriodModel.fromJson(doc.data())).toList();
+          final periods = periodsSnapshot.docs.map((doc) {
+            try {
+              return MaintenancePeriodModel.fromJson(doc.data());
+            } catch (e) {
+              // Use a logging framework in production
+              // Return a default model if parsing fails
+              return const MaintenancePeriodModel(
+                isActive: true,
+                totalCollected: 0.0,
+                totalPending: 0.0,
+              );
+            }
+          }).toList();
 
-        return periods;
+          return periods;
+        } catch (e) {
+          // Use a logging framework in production
+          throw Exception('Failed to fetch maintenance periods: $e');
+        }
       },
     );
   }
@@ -131,14 +150,31 @@ class MaintenanceRepository extends IMaintenanceRepository {
   FirebaseResult<List<MaintenancePeriodModel>> getActiveMaintenancePeriods() {
     return Result<List<MaintenancePeriodModel>>().tryCatch(
       run: () async {
-        final periodsSnapshot = await FirebaseFirestore.instance.maintenance
-            .where('is_active', isEqualTo: true)
-            .orderBy('created_at', descending: true)
-            .get();
+        try {
+          final periodsSnapshot = await FirebaseFirestore.instance.maintenance
+              .where('is_active', isEqualTo: true)
+              .orderBy('created_at', descending: true)
+              .get();
 
-        final periods = periodsSnapshot.docs.map((doc) => MaintenancePeriodModel.fromJson(doc.data())).toList();
+          final periods = periodsSnapshot.docs.map((doc) {
+            try {
+              return MaintenancePeriodModel.fromJson(doc.data());
+            } catch (e) {
+              // Use a logging framework in production
+              // Return a default model if parsing fails
+              return const MaintenancePeriodModel(
+                isActive: true,
+                totalCollected: 0.0,
+                totalPending: 0.0,
+              );
+            }
+          }).toList();
 
-        return periods;
+          return periods;
+        } catch (e) {
+          // Use a logging framework in production
+          throw Exception('Failed to fetch active maintenance periods: $e');
+        }
       },
     );
   }
@@ -281,6 +317,8 @@ class MaintenanceRepository extends IMaintenanceRepository {
     PaymentStatus status = PaymentStatus.paid,
     String? notes,
     String? receiptNumber,
+    String? checkNumber,
+    String? transactionId,
   }) {
     return Result<MaintenancePaymentModel>().tryCatch(
       run: () async {
@@ -319,6 +357,8 @@ class MaintenanceRepository extends IMaintenanceRepository {
           'status': _statusToString(paymentStatus),
           'notes': notes,
           'receipt_number': receiptNumber,
+          'check_number': checkNumber,
+          'transaction_id': transactionId,
           'updated_at': now,
         });
 
@@ -365,8 +405,24 @@ class MaintenanceRepository extends IMaintenanceRepository {
         return 'overdue';
       case PaymentStatus.pending:
         return 'pending';
-      // Default case is handled by pending case
     }
+  }
+
+  @override
+  FirebaseResult<MaintenancePeriodModel> getMaintenancePeriodById({
+    required String periodId,
+  }) {
+    return Result<MaintenancePeriodModel>().tryCatch(
+      run: () async {
+        final periodDoc = await FirebaseFirestore.instance.maintenance.doc(periodId).get();
+
+        if (!periodDoc.exists) {
+          throw Exception('Maintenance period not found');
+        }
+
+        return MaintenancePeriodModel.fromJson(periodDoc.data()!);
+      },
+    );
   }
 
   @override
@@ -450,20 +506,26 @@ class MaintenanceRepository extends IMaintenanceRepository {
           totalCollected += amountPaid;
           totalPending += (amount - amountPaid);
 
-          switch (status) {
-            case 'paid':
-              paidCount++;
-              break;
-            case 'partially_paid':
-              partiallyPaidCount++;
-              break;
-            case 'overdue':
-              overdueCount++;
-              break;
-            case 'pending':
-            default:
-              pendingCount++;
-              break;
+          if (status == null) {
+            pendingCount++;
+          } else {
+            switch (status) {
+              case 'paid':
+                paidCount++;
+                break;
+              case 'partially_paid':
+                partiallyPaidCount++;
+                break;
+              case 'overdue':
+                overdueCount++;
+                break;
+              case 'pending':
+                pendingCount++;
+                break;
+              default:
+                pendingCount++;
+                break;
+            }
           }
         }
 
@@ -595,6 +657,8 @@ class MaintenanceRepository extends IMaintenanceRepository {
                 'status': 'pending',
                 'notes': null,
                 'receipt_number': null,
+                'check_number': null,
+                'transaction_id': null,
                 'created_at': now,
                 'updated_at': now,
               });

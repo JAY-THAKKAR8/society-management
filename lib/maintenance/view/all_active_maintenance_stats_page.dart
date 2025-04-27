@@ -217,20 +217,30 @@ class _AllActiveMaintenanceStatsPageState extends State<AllActiveMaintenanceStat
       onRefresh: _fetchData,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildOverallSummary(),
-            const SizedBox(height: 24),
-            Text(
-              'Line-wise Statistics',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            ..._buildLineStatCards(),
-          ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height - 100, // Subtract app bar height
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildOverallSummary(),
+              const SizedBox(height: 24),
+              Text(
+                'Line-wise Statistics',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              // Wrap the dynamic content in a Column with proper constraints
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: _buildLineStatCards(),
+              ),
+            ],
+          ),
         ),
       ),
     );

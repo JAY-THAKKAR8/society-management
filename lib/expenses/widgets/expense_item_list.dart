@@ -152,33 +152,35 @@ class _ExpenseItemListState extends State<ExpenseItemList> {
                   ),
                 ),
                 const Divider(height: 1),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _items.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
+                // Use Column instead of ListView to avoid nested scrolling issues
+                Column(
+                  children: List.generate(_items.length, (index) {
                     final item = _items[index];
-                    return Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: Text(item.name ?? ''),
+                    return Column(
+                      children: [
+                        if (index > 0) const Divider(height: 1),
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: Text(item.name ?? ''),
+                              ),
+                              Expanded(
+                                child: Text('₹${item.price?.toStringAsFixed(2) ?? '0.00'}'),
+                              ),
+                              IconButton(
+                                onPressed: () => _removeItem(index),
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                iconSize: 20,
+                              ),
+                            ],
                           ),
-                          Expanded(
-                            child: Text('₹${item.price?.toStringAsFixed(2) ?? '0.00'}'),
-                          ),
-                          IconButton(
-                            onPressed: () => _removeItem(index),
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            iconSize: 20,
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     );
-                  },
+                  }),
                 ),
               ],
             ),
