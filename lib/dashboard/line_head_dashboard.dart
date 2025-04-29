@@ -11,6 +11,7 @@ import 'package:society_management/maintenance/model/maintenance_payment_model.d
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/line_head_alert_dialog.dart';
 import 'package:society_management/users/model/user_model.dart';
+import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 
@@ -217,6 +218,13 @@ class _LineHeadDashboardState extends State<LineHeadDashboard> {
               _activityKey.currentState?.refreshActivities();
             },
             tooltip: 'Refresh dashboard',
+          ),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              context.push(UserInformationPage(user: _currentUser));
+            },
+            tooltip: 'Society Information',
           ),
           IconButton(
             icon: const Icon(Icons.logout),

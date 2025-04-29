@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
@@ -28,6 +29,8 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
   String? _errorMessage;
   bool _isAdmin = false;
   UserModel? _currentUser;
+  // Map to store line-specific maintenance data
+  final Map<String, Map<String, double>> _lineMaintenanceData = {};
 
   @override
   void initState() {
@@ -52,7 +55,10 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
         (user) {
           setState(() {
             _currentUser = user;
-            _isAdmin = user.role == 'ADMIN' || user.role?.toLowerCase() == 'admin';
+            _isAdmin = user.role == 'ADMIN' ||
+                user.role?.toLowerCase() == 'admin' ||
+                user.role == AppConstants.admin ||
+                user.role == AppConstants.admins;
           });
           _fetchMaintenancePeriods();
         },
@@ -81,9 +87,18 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
           });
           Utility.toast(message: failure.message);
         },
-        (periods) {
+        (periods) async {
+          _periods = periods;
+
+          // If user is a line head, fetch line-specific data
+          if (_currentUser != null && _currentUser!.isLineHead && !_isAdmin) {
+            final lineNumber = _currentUser!.lineNumber;
+            if (lineNumber != null) {
+              await _fetchLineSpecificData(periods, lineNumber);
+            }
+          }
+
           setState(() {
-            _periods = periods;
             _isLoading = false;
           });
         },
@@ -94,6 +109,48 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
         _errorMessage = e.toString();
       });
       Utility.toast(message: 'Error fetching maintenance periods: $e');
+    }
+  }
+
+  Future<void> _fetchLineSpecificData(List<MaintenancePeriodModel> periods, String lineNumber) async {
+    try {
+      final maintenanceRepository = getIt<IMaintenanceRepository>();
+
+      for (final period in periods) {
+        if (period.id == null) continue;
+
+        // Get payments for this line and period
+        final paymentsResult = await maintenanceRepository.getPaymentsForLine(
+          periodId: period.id!,
+          lineNumber: lineNumber,
+        );
+
+        paymentsResult.fold(
+          (failure) {
+            Utility.toast(message: 'Error fetching line data: ${failure.message}');
+          },
+          (payments) {
+            double totalCollected = 0.0;
+            double totalPending = 0.0;
+
+            for (final payment in payments) {
+              final amount = payment.amount ?? 0.0;
+              final amountPaid = payment.amountPaid;
+
+              totalCollected += amountPaid;
+              totalPending += (amount - amountPaid);
+            }
+
+            // Store line-specific data
+            _lineMaintenanceData[period.id!] = {
+              'totalCollected': totalCollected,
+              'totalPending': totalPending,
+            };
+          },
+        );
+      }
+    } catch (e) {
+      Utility.toast(message: 'Error fetching line data: $e');
     }
   }
 
@@ -204,9 +261,25 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
         period.startDate != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(period.startDate!)) : 'N/A';
     final dueDate = period.dueDate != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(period.dueDate!)) : 'N/A';
 
-    final collectionPercentage = period.amount != null && period.amount! > 0
-        ? (period.totalCollected / (period.totalCollected + period.totalPending)) * 100
-        : 0.0;
+    // Determine if we should use line-specific data or global data
+    double totalCollected = period.totalCollected;
+    double totalPending = period.totalPending;
+    String displayTitle = 'Collection Progress';
+
+    // If user is a line head (but not admin) and we have line-specific data, use it
+    if (_currentUser != null &&
+        _currentUser!.isLineHead &&
+        !_isAdmin &&
+        period.id != null &&
+        _lineMaintenanceData.containsKey(period.id)) {
+      final lineData = _lineMaintenanceData[period.id!]!;
+      totalCollected = lineData['totalCollected'] ?? 0.0;
+      totalPending = lineData['totalPending'] ?? 0.0;
+      displayTitle = 'Line ${_currentUser!.userLineViewString} Collection Progress';
+    }
+
+    final collectionPercentage =
+        (totalCollected + totalPending) > 0 ? (totalCollected / (totalCollected + totalPending)) * 100 : 0.0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -294,32 +367,39 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(
-                    'Collection Progress',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withAlpha(50),
-                      borderRadius: BorderRadius.circular(12),
+              Text(
+                displayTitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: Text(
-                      'Due: $dueDate',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.amber,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                    ),
-                  ),
-                ],
               ),
+
+              // Row(
+              //   children: [
+              //     Text(
+              //       displayTitle,
+              //       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              //             fontWeight: FontWeight.bold,
+              //           ),
+              //     ),
+              //     const SizedBox(width: 0),
+              //     Container(
+              //       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              //       decoration: BoxDecoration(
+              //         color: Colors.amber.withAlpha(50),
+              //         borderRadius: BorderRadius.circular(12),
+              //       ),
+              //       child: Text(
+              //         'Due: $dueDate',
+              //         style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              //               color: Colors.amber,
+              //               fontWeight: FontWeight.bold,
+              //               fontSize: 10,
+              //             ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
               const SizedBox(height: 8),
               LinearProgressIndicator(
                 value: collectionPercentage / 100,
@@ -342,13 +422,13 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   Text(
-                    'Collected: ₹${period.totalCollected.toStringAsFixed(2)}',
+                    'Collected: ₹${totalCollected.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.green,
                         ),
                   ),
                   Text(
-                    'Pending: ₹${period.totalPending.toStringAsFixed(2)}',
+                    'Pending: ₹${totalPending.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.red,
                         ),

@@ -7,8 +7,11 @@ import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/dashboard/line_head_dashboard.dart';
 import 'package:society_management/dashboard/widgets/line_member_quick_actions.dart';
 import 'package:society_management/dashboard/widgets/line_member_summary_section.dart';
+import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/view/my_maintenance_status_page.dart';
 import 'package:society_management/users/model/user_model.dart';
+import 'package:society_management/users/repository/i_user_repository.dart';
+import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 
@@ -23,6 +26,7 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
   final AuthService _authService = AuthService();
   UserModel? _currentUser;
   bool _isLoading = true;
+  List<UserModel> _lineMembers = [];
 
   @override
   void initState() {
@@ -45,6 +49,11 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
           _currentUser = user;
           _isLoading = false;
         });
+
+        // Fetch line members after getting current user
+        if (user.lineNumber != null) {
+          _fetchLineMembers(user.lineNumber!);
+        }
       } else {
         setState(() {
           _isLoading = false;
@@ -69,6 +78,30 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
       }
     } catch (e) {
       Utility.toast(message: 'Error logging out: $e');
+    }
+  }
+
+  Future<void> _fetchLineMembers(String lineNumber) async {
+    try {
+      final userRepository = getIt<IUserRepository>();
+      final result = await userRepository.getAllUsers();
+
+      result.fold(
+        (failure) {
+          Utility.toast(message: failure.message);
+        },
+        (users) {
+          // Filter users by line number
+          final filteredUsers =
+              users.where((user) => user.lineNumber == lineNumber && user.id != _currentUser?.id).toList();
+
+          setState(() {
+            _lineMembers = filteredUsers;
+          });
+        },
+      );
+    } catch (e) {
+      Utility.toast(message: 'Error fetching line members: $e');
     }
   }
 
@@ -121,6 +154,13 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
               tooltip: 'Switch to Line Head View',
             ),
           IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              context.push(UserInformationPage(user: _currentUser));
+            },
+            tooltip: 'Society Information',
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
             tooltip: 'Logout',
@@ -152,6 +192,9 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
                   const SizedBox(height: 24),
                   // Line member specific content
                   _buildLineInfo(),
+                  const SizedBox(height: 24),
+                  // Line members list
+                  _buildLineMembersList(),
                 ],
               ),
             ),
@@ -204,6 +247,141 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
                   fontWeight: FontWeight.bold,
                 ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLineMembersList() {
+    if (_lineMembers.isEmpty) {
+      return Card(
+        color: AppColors.lightBlack,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.white.withAlpha(25)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Line Members",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  "No other members in your line",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      color: AppColors.lightBlack,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.white.withAlpha(25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Line Members",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                Text(
+                  "${_lineMembers.length} members",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.greyText,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ..._lineMembers.map((member) => _buildMemberItem(member)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemberItem(UserModel member) {
+    final bool isLineHead = member.role == 'LINE_HEAD' || member.role == 'LINE_HEAD_MEMBER';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isLineHead ? Colors.blue.withOpacity(0.2) : AppColors.buttonColor.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                member.name?.isNotEmpty == true ? member.name!.substring(0, 1).toUpperCase() : '?',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isLineHead ? Colors.blue : AppColors.buttonColor,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  member.name ?? 'Unknown',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isLineHead ? Colors.blue : null,
+                      ),
+                ),
+                if (member.villNumber != null)
+                  Text(
+                    'Villa: ${member.villNumber}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.greyText,
+                        ),
+                  ),
+              ],
+            ),
+          ),
+          if (isLineHead)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Line Head',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
         ],
       ),
     );

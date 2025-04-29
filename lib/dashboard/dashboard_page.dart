@@ -8,6 +8,7 @@ import 'package:society_management/dashboard/widgets/summary_section.dart';
 import 'package:society_management/expenses/view/add_expense_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
 import 'package:society_management/users/model/user_model.dart';
+import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/users/view/user_management_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -87,6 +88,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
               _activityKey.currentState?.refreshActivities();
             },
             tooltip: 'Refresh dashboard',
+          ),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              context.push(UserInformationPage(user: _currentUser));
+            },
+            tooltip: 'Society Information',
           ),
           IconButton(
             icon: const Icon(Icons.logout),

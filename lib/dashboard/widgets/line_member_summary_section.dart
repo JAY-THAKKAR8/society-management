@@ -24,7 +24,9 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
   bool _isLoading = true;
   int _lineMembers = 0;
   int _pendingPayments = 0;
+  int _fullyPaidUsers = 0;
   double _collectedAmount = 0.0;
+  double _pendingAmount = 0.0;
   int _activeMaintenancePeriods = 0;
 
   @override
@@ -112,17 +114,26 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
                               )
                               .toList();
 
-                          // Count pending payments
-                          _pendingPayments = linePayments
-                              .where(
-                                (payment) => payment.status.toString().contains('pending'),
-                              )
-                              .length;
-
-                          // Sum collected amount
+                          // Count pending and fully paid users
+                          _pendingPayments = 0;
+                          _fullyPaidUsers = 0;
                           _collectedAmount = 0.0;
+                          _pendingAmount = 0.0;
+
                           for (final payment in linePayments) {
-                            _collectedAmount += payment.amountPaid;
+                            final amount = payment.amount ?? 0.0;
+                            final amountPaid = payment.amountPaid;
+
+                            // Add to collected amount
+                            _collectedAmount += amountPaid;
+
+                            // Check if fully paid or pending
+                            if (amountPaid >= amount && amount > 0) {
+                              _fullyPaidUsers++;
+                            } else if (amount > 0) {
+                              _pendingPayments++;
+                              _pendingAmount += (amount - amountPaid);
+                            }
                           }
 
                           setState(() {
@@ -163,6 +174,7 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
                 icon: Icons.group,
                 title: "Line Members",
                 value: _isLoading ? "Loading..." : "$_lineMembers",
+                iconColor: Colors.blue,
               ),
             ),
             const Gap(16),
@@ -171,6 +183,7 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
                 icon: Icons.pending_actions,
                 title: "Pending Payments",
                 value: _isLoading ? "Loading..." : "$_pendingPayments",
+                iconColor: Colors.orange,
                 onTap: () {
                   if (widget.lineNumber != null) {
                     Navigator.of(context).push(
@@ -189,9 +202,19 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
           children: [
             Expanded(
               child: SummaryCard(
-                icon: Icons.monetization_on,
-                title: "Collected Amount",
-                value: _isLoading ? "Loading..." : "₹${_collectedAmount.toStringAsFixed(2)}",
+                icon: Icons.check_circle,
+                title: "Fully Paid",
+                value: _isLoading ? "Loading..." : "$_fullyPaidUsers",
+                iconColor: Colors.green,
+                onTap: () {
+                  if (widget.lineNumber != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const MyMaintenanceStatusPage(),
+                      ),
+                    );
+                  }
+                },
               ),
             ),
             const Gap(16),
@@ -200,6 +223,38 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
                 icon: Icons.calendar_month,
                 title: "Active Periods",
                 value: _isLoading ? "Loading..." : "$_activeMaintenancePeriods",
+                iconColor: Colors.purple,
+              ),
+            ),
+          ],
+        ),
+        const Gap(16),
+        Row(
+          children: [
+            Expanded(
+              child: SummaryCard(
+                icon: Icons.monetization_on,
+                title: "Collected Amount",
+                value: _isLoading ? "Loading..." : "₹${_collectedAmount.toStringAsFixed(2)}",
+                iconColor: Colors.green.shade600,
+              ),
+            ),
+            const Gap(16),
+            Expanded(
+              child: SummaryCard(
+                icon: Icons.money_off,
+                title: "Pending Amount",
+                value: _isLoading ? "Loading..." : "₹${_pendingAmount.toStringAsFixed(2)}",
+                iconColor: Colors.red,
+                onTap: () {
+                  if (widget.lineNumber != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const MyMaintenanceStatusPage(),
+                      ),
+                    );
+                  }
+                },
               ),
             ),
           ],

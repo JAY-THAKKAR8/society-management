@@ -6,6 +6,8 @@ class SummaryCard extends StatelessWidget {
   final String title;
   final String value;
   final VoidCallback? onTap;
+  final Color? iconColor;
+  final Color? iconBackgroundColor;
 
   const SummaryCard({
     super.key,
@@ -13,11 +15,15 @@ class SummaryCard extends StatelessWidget {
     required this.title,
     required this.value,
     this.onTap,
+    this.iconColor,
+    this.iconBackgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final effectiveIconColor = iconColor ?? AppColors.buttonColor;
+    final effectiveIconBgColor = iconBackgroundColor ?? effectiveIconColor.withOpacity(0.15);
 
     return GestureDetector(
       onTap: onTap,
@@ -30,8 +36,18 @@ class SummaryCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: AppColors.buttonColor),
-            const SizedBox(height: 8),
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: effectiveIconBgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Icon(icon, size: 28, color: effectiveIconColor),
+              ),
+            ),
+            const SizedBox(height: 12),
             Text(
               value,
               style: theme.textTheme.titleLarge,

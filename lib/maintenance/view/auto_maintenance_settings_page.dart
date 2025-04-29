@@ -69,12 +69,12 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
       final amount = double.tryParse(_amountController.text.trim()) ?? 1000.0;
       final autoService = AutoMaintenanceService();
 
-      // Calculate next month's date for display
+      // Calculate current month's date for display
       final now = DateTime.now();
-      final nextMonth = DateTime(now.year, now.month + 1, 1);
-      final nextMonthName = DateFormat('MMMM yyyy').format(nextMonth);
+      final currentMonth = DateTime(now.year, now.month, 1);
+      final currentMonthName = DateFormat('MMMM yyyy').format(currentMonth);
 
-      final result = await autoService.createNextMonthPeriod(defaultAmount: amount);
+      final result = await autoService.createCurrentMonthPeriod(defaultAmount: amount);
 
       result.fold(
         (failure) {
@@ -87,7 +87,7 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
         (period) {
           setState(() {
             _isLoading = false;
-            _successMessage = 'Successfully created maintenance period for $nextMonthName';
+            _successMessage = 'Successfully created maintenance period for $currentMonthName';
           });
           Utility.toast(message: 'Maintenance period created successfully');
         },
@@ -171,7 +171,7 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
                   const SizedBox(height: 24),
                 ],
                 CommonButton(
-                  text: 'Create Next Month Period Now',
+                  text: 'Create Current Month Period Now',
                   isLoading: _isLoading,
                   onTap: _createNextMonthPeriod,
                 ),
@@ -218,12 +218,12 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
             ),
             const SizedBox(height: 16),
             Text(
-              'The system is configured to automatically create a new maintenance period on the 26th of each month for the next month without any user interaction.',
+              'The system is configured to automatically create a new maintenance period on the 27th of each month for the current month without any user interaction.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'For example, on June 26th, a new period for July will be created automatically in the background.',
+              'For example, on April 27th, a new period for April will be created automatically in the background.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
@@ -233,7 +233,7 @@ class _AutoMaintenanceSettingsPageState extends State<AutoMaintenanceSettingsPag
             ),
             const SizedBox(height: 8),
             Text(
-              'You can also manually create the next month\'s period using the button below if needed.',
+              'You can also manually create the current month\'s period using the button below if needed.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],

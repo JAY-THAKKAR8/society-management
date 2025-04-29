@@ -59,4 +59,22 @@ class AppConstants {
   static const String notAvailable = 'Not Available';
   static const String notes =
       'Make sure that you have sufficient users for each Role.\n\nUse this formula:\nD  = MR * (B+1)\n\nMR: minimum user required per shift\nB : Avoid shift days\nD : number of users required for that role';
+
+  // Helper method to get line constant from line number
+  static String getLineConstant(int lineNumber) {
+    switch (lineNumber) {
+      case 1:
+        return firstLine;
+      case 2:
+        return secondLine;
+      case 3:
+        return thirdLine;
+      case 4:
+        return fourthLine;
+      case 5:
+        return fifthLine;
+      default:
+        return firstLine;
+    }
+  }
 }

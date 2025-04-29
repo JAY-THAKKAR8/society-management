@@ -7,6 +7,7 @@ import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/dashboard_page.dart';
 import 'package:society_management/dashboard/line_head_dashboard.dart';
 import 'package:society_management/dashboard/line_member_dashboard.dart';
+import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/kdv_logo.dart';
@@ -49,7 +50,12 @@ class _SplashPageState extends State<SplashPage> {
         if (user != null) {
           // User is logged in and Firebase session is valid
           if (mounted) {
-            // Route based on user role
+            // First navigate to user information page
+            await context.push(UserInformationPage(user: user));
+
+            if (!mounted) return;
+
+            // Then route based on user role
             if (user.role == AppConstants.lineMember) {
               context.pushAndRemoveUntil(const LineMemberDashboard());
             } else if (user.role == AppConstants.lineLead) {

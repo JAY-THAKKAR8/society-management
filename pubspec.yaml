@@ -46,6 +46,7 @@ dependencies:
   flutter_svg: ^2.1.0
   bloc: ^9.0.0
   flutter_bloc: ^9.1.0
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   injectable_generator: 2.6.2
@@ -76,7 +77,7 @@ flutter:
           weight: 700
         - asset: fonts/SFProDisplay-Heavy.ttf
           weight: 900
-  
+
 flutter_intl:
   enabled: true
   class_name: I10n

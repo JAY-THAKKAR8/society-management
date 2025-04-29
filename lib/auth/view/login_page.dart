@@ -8,6 +8,7 @@ import 'package:society_management/dashboard/dashboard_page.dart';
 import 'package:society_management/dashboard/line_head_dashboard.dart';
 import 'package:society_management/dashboard/line_member_dashboard.dart';
 import 'package:society_management/users/model/user_model.dart';
+import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
@@ -86,7 +87,13 @@ class _LoginPageState extends State<LoginPage> {
           if (result.isSuccess) {
             // Navigate based on user role
             if (result.user != null) {
-              // Route based on user role
+              // Show user information page first
+              await context.push(UserInformationPage(user: result.user));
+
+              // Check if widget is still mounted before proceeding
+              if (!mounted) return;
+
+              // Then navigate to the appropriate dashboard
               if (result.user!.role == AppConstants.lineMember) {
                 // Line member dashboard
                 context.pushAndRemoveUntil(const LineMemberDashboard());

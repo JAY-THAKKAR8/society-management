@@ -15,12 +15,12 @@ class AutoMaintenanceService {
       : _maintenanceRepository = maintenanceRepository ?? getIt<IMaintenanceRepository>();
 
   /// Check if it's time to create a new maintenance period
-  /// Returns true if today is the 26th of the month and no period exists for next month
+  /// Returns true if today is the 27th of the month and no period exists for current month
   Future<bool> shouldCreateNewPeriod() async {
-    // Check if today is the 26th of the month
+    // Check if today is the 27th of the month
     final now = DateTime.now();
-    if (now.day == 26) {
-      // Continue with the check if it's the 26th
+    if (now.day == 27) {
+      // Continue with the check if it's the 27th
     } else {
       return false;
     }
@@ -31,42 +31,61 @@ class AutoMaintenanceService {
     return periodsResult.fold(
       (failure) => false, // If there's an error, don't create a new period
       (periods) {
-        // Calculate next month's start and end dates
-        final nextMonth = DateTime(now.year, now.month + 1, 1);
-        final nextMonthName = DateFormat('MMMM yyyy').format(nextMonth);
+        // Calculate current month's start date
+        final currentMonth = DateTime(now.year, now.month, 1);
+        final currentMonthName = DateFormat('MMMM yyyy').format(currentMonth);
 
-        // Check if a period already exists for next month
+        // Check if a period already exists for current month
         final existingPeriod = periods.any((period) =>
-            period.name?.toLowerCase() == nextMonthName.toLowerCase() ||
+            period.name?.toLowerCase() == currentMonthName.toLowerCase() ||
             (period.startDate != null &&
-                DateTime.parse(period.startDate!).month == nextMonth.month &&
-                DateTime.parse(period.startDate!).year == nextMonth.year));
+                DateTime.parse(period.startDate!).month == currentMonth.month &&
+                DateTime.parse(period.startDate!).year == currentMonth.year));
 
-        // Return true if no period exists for next month
+        // Return true if no period exists for current month
         return !existingPeriod;
       },
     );
   }
 
-  /// Create a new maintenance period for the next month
-  Future<EitherResult<MaintenancePeriodModel>> createNextMonthPeriod({
+  /// Create a new maintenance period for the current month
+  Future<EitherResult<MaintenancePeriodModel>> createCurrentMonthPeriod({
     double? defaultAmount,
   }) async {
     try {
       final now = DateTime.now();
 
-      // Calculate next month's dates
-      final nextMonth = DateTime(now.year, now.month + 1, 1);
-      final nextMonthEnd = DateTime(now.year, now.month + 2, 0); // Last day of next month
-      final nextMonthDueDate = DateTime(now.year, now.month + 1, 10); // Due on 10th of next month
+      // Calculate current month's dates
+      final currentMonth = DateTime(now.year, now.month, 1);
+      final currentMonthEnd = DateTime(now.year, now.month + 1, 0); // Last day of current month
+      final currentMonthDueDate = DateTime(now.year, now.month, 25); // Due on 25th of current month
 
       // Format the period name
-      final nextMonthName = DateFormat('MMMM yyyy').format(nextMonth);
+      final currentMonthName = DateFormat('MMMM yyyy').format(currentMonth);
+
+      // Check if a period already exists for the current month
+      final periodsResult = await _maintenanceRepository.getAllMaintenancePeriods();
+
+      final existingPeriod = periodsResult.fold(
+        (failure) => false, // If there's an error, assume no existing period
+        (periods) {
+          return periods.any((period) =>
+              period.name?.toLowerCase() == currentMonthName.toLowerCase() ||
+              (period.startDate != null &&
+                  DateTime.parse(period.startDate!).month == currentMonth.month &&
+                  DateTime.parse(period.startDate!).year == currentMonth.year));
+        },
+      );
+
+      // If a period already exists for this month, don't create another one
+      if (existingPeriod) {
+        return left(CustomFailure(
+          message: 'A maintenance period for $currentMonthName already exists',
+        ));
+      }
 
       // Get the amount from the most recent period or use default
       double amount = defaultAmount ?? 1000.0; // Default amount if not specified
-
-      final periodsResult = await _maintenanceRepository.getAllMaintenancePeriods();
 
       periodsResult.fold(
         (failure) {
@@ -85,12 +104,12 @@ class AutoMaintenanceService {
 
       // Create the new period
       final result = await _maintenanceRepository.createMaintenancePeriod(
-        name: nextMonthName,
-        description: 'Automatically generated maintenance period for $nextMonthName',
+        name: currentMonthName,
+        description: 'Automatically generated maintenance period for $currentMonthName',
         amount: amount,
-        startDate: nextMonth,
-        endDate: nextMonthEnd,
-        dueDate: nextMonthDueDate,
+        startDate: currentMonth,
+        endDate: currentMonthEnd,
+        dueDate: currentMonthDueDate,
       );
 
       return result.fold(
@@ -114,12 +133,12 @@ class AutoMaintenanceService {
       final shouldCreate = await shouldCreateNewPeriod();
 
       if (!shouldCreate) {
-        // Even if it's not the 26th, check if we missed creating a period
+        // Even if it's not the 27th, check if we missed creating a period
         return await checkForMissedPeriods(defaultAmount: defaultAmount);
       }
 
-      // Create a new period for next month
-      final result = await createNextMonthPeriod(defaultAmount: defaultAmount);
+      // Create a new period for current month
+      final result = await createCurrentMonthPeriod(defaultAmount: defaultAmount);
 
       if (result.isRight()) {
         _logPeriodCreation(result);
@@ -135,7 +154,7 @@ class AutoMaintenanceService {
   }
 
   /// Check if we missed creating periods for any months
-  /// This ensures periods are created even if the app wasn't running on the 26th
+  /// This ensures periods are created even if the app wasn't running on the 27th
   Future<EitherResult<MaintenancePeriodModel?>> checkForMissedPeriods({
     double? defaultAmount,
   }) async {
@@ -157,8 +176,8 @@ class AutoMaintenanceService {
                   DateTime.parse(period.startDate!).month == currentMonth.month &&
                   DateTime.parse(period.startDate!).year == currentMonth.year));
 
-          // If we're on or past the 26th and don't have a period for next month, create it
-          if (now.day >= 26 && !hasCurrentMonth) {
+          // If we're on or past the 27th and don't have a period for current month, create it
+          if (now.day >= 27 && !hasCurrentMonth) {
             // Create a period for the current month
             final result = await createPeriodForMonth(
               targetMonth: currentMonth,
@@ -192,15 +211,34 @@ class AutoMaintenanceService {
       // Calculate month dates
       final monthStart = DateTime(targetMonth.year, targetMonth.month, 1);
       final monthEnd = DateTime(targetMonth.year, targetMonth.month + 1, 0); // Last day of month
-      final monthDueDate = DateTime(targetMonth.year, targetMonth.month, 10); // Due on 10th
+      final monthDueDate = DateTime(targetMonth.year, targetMonth.month, 25); // Due on 25th
 
       // Format the period name
       final monthName = DateFormat('MMMM yyyy').format(monthStart);
 
+      // Check if a period already exists for this month
+      final periodsResult = await _maintenanceRepository.getAllMaintenancePeriods();
+
+      final existingPeriod = periodsResult.fold(
+        (failure) => false, // If there's an error, assume no existing period
+        (periods) {
+          return periods.any((period) =>
+              period.name?.toLowerCase() == monthName.toLowerCase() ||
+              (period.startDate != null &&
+                  DateTime.parse(period.startDate!).month == monthStart.month &&
+                  DateTime.parse(period.startDate!).year == monthStart.year));
+        },
+      );
+
+      // If a period already exists for this month, don't create another one
+      if (existingPeriod) {
+        return left(CustomFailure(
+          message: 'A maintenance period for $monthName already exists',
+        ));
+      }
+
       // Get the amount from the most recent period or use default
       double amount = defaultAmount ?? 1000.0; // Default amount if not specified
-
-      final periodsResult = await _maintenanceRepository.getAllMaintenancePeriods();
 
       periodsResult.fold(
         (failure) {
