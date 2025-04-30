@@ -279,6 +279,10 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
                   }
                   return null;
                 },
+                // Make sure receipt number is clearly visible
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const Gap(20),
               AppTextFormField(
@@ -533,6 +537,8 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
   }
 
   String _getLineText(String? lineNumber) {
+    if (lineNumber == null) return 'Unknown';
+
     switch (lineNumber) {
       case AppConstants.firstLine:
         return 'Line 1';
@@ -545,7 +551,17 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
       case AppConstants.fifthLine:
         return 'Line 5';
       default:
-        return 'Unknown';
+        // Handle case where lineNumber might contain underscores
+        if (lineNumber.contains('_')) {
+          final parts = lineNumber.split('_');
+          if (parts.length > 1) {
+            // Convert FIRST_LINE to First Line
+            return parts
+                .map((part) => part.isNotEmpty ? '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}' : '')
+                .join(' ');
+          }
+        }
+        return lineNumber;
     }
   }
 }

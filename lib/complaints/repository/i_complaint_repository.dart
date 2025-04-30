@@ -4,7 +4,7 @@ import 'package:society_management/utility/app_typednfs.dart';
 
 abstract class IComplaintRepository {
   IComplaintRepository(this.firestore);
-  
+
   final FirebaseFirestore firestore;
 
   /// Add a new complaint
@@ -15,7 +15,11 @@ abstract class IComplaintRepository {
     required String? userLineNumber,
     required String title,
     required String description,
+    String? imageUrl,
   });
+
+  /// Upload an image for a complaint and return the URL
+  FirebaseResult<String> uploadComplaintImage(String userId, String filePath);
 
   /// Get all complaints
   FirebaseResult<List<ComplaintModel>> getAllComplaints();
@@ -31,4 +35,7 @@ abstract class IComplaintRepository {
     required ComplaintStatus status,
     String? adminResponse,
   });
+
+  /// Update an entire complaint
+  FirebaseResult<ComplaintModel> updateComplaint(ComplaintModel complaint);
 }

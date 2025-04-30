@@ -74,6 +74,10 @@ class ComplaintDetailPage extends StatelessWidget {
               _buildStatusCard(context, statusColor),
               const SizedBox(height: 16),
               _buildComplaintDetailsCard(context, formattedCreatedDate, formattedUpdatedDate),
+              if (complaint.imageUrl != null) ...[
+                const SizedBox(height: 16),
+                _buildImageCard(context),
+              ],
               if (complaint.adminResponse != null) ...[
                 const SizedBox(height: 16),
                 _buildAdminResponseCard(context),
@@ -99,7 +103,7 @@ class ComplaintDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: statusColor.withAlpha(50),
+                color: statusColor.withAlpha(51), // 0.2 opacity = 51/255
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -153,7 +157,7 @@ class ComplaintDetailPage extends StatelessWidget {
       color: AppColors.lightBlack,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.white.withAlpha(25)),
+        side: BorderSide(color: Colors.white.withAlpha(26)), // 0.1 opacity = 26/255
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -193,7 +197,7 @@ class ComplaintDetailPage extends StatelessWidget {
       color: AppColors.lightBlack,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.blue.withAlpha(50)),
+        side: BorderSide(color: Colors.blue.withAlpha(51)), // 0.2 opacity = 51/255
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -244,6 +248,72 @@ class ComplaintDetailPage extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+
+  Widget _buildImageCard(BuildContext context) {
+    return Card(
+      color: AppColors.lightBlack,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.white.withAlpha(26)), // 0.1 opacity = 26/255
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.image,
+                  color: Colors.blue,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Attached Screenshot',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                complaint.imageUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 250,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return SizedBox(
+                    height: 250,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: double.infinity,
+                    height: 250,
+                    color: Colors.grey.withAlpha(51),
+                    child: const Center(
+                      child: Text('Failed to load image'),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

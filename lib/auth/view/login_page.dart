@@ -4,9 +4,9 @@ import 'package:gap/gap.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
-import 'package:society_management/dashboard/dashboard_page.dart';
 import 'package:society_management/dashboard/line_head_dashboard.dart';
 import 'package:society_management/dashboard/line_member_dashboard.dart';
+import 'package:society_management/dashboard/view/improved_admin_dashboard_with_screenshot.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
@@ -104,8 +104,8 @@ class _LoginPageState extends State<LoginPage> {
                 // Show dialog to choose dashboard
                 _showRoleSelectionDialog(result.user!);
               } else {
-                // Admin dashboard
-                context.pushAndRemoveUntil(const AdminDashboard());
+                // Admin dashboard with screenshot
+                context.pushAndRemoveUntil(const ImprovedAdminDashboardWithScreenshot());
               }
 
               // Show welcome message with role information
@@ -113,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                   message: 'Welcome ${result.user!.name}, you are logged in as ${result.user!.userRoleViewString}');
             } else {
               // Default to admin dashboard if user data is missing
-              context.pushAndRemoveUntil(const AdminDashboard());
+              context.pushAndRemoveUntil(const ImprovedAdminDashboardWithScreenshot());
             }
           } else {
             Utility.toast(message: result.errorMessage ?? 'Login failed');

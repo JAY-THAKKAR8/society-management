@@ -14,6 +14,24 @@ import 'package:society_management/utility/utility.dart';
 class ReceiptService {
   static const String societyName = "Krishna Darshan Villa";
 
+  // Format line number to a user-friendly string
+  static String _formatLineNumber(String lineNumber) {
+    switch (lineNumber) {
+      case 'FIRST_LINE':
+        return 'Line 1';
+      case 'SECOND_LINE':
+        return 'Line 2';
+      case 'THIRD_LINE':
+        return 'Line 3';
+      case 'FOURTH_LINE':
+        return 'Line 4';
+      case 'FIFTH_LINE':
+        return 'Line 5';
+      default:
+        return lineNumber;
+    }
+  }
+
   // Generate a unique receipt number
   static Future<String> generateReceiptNumber() async {
     try {
@@ -145,7 +163,7 @@ class ReceiptService {
                               borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
                             ),
                             child: pw.Text(
-                              'RECEIPT #: ${payment.receiptNumber}',
+                              'RECEIPT #: ${payment.receiptNumber ?? "N/A"}',
                               style: pw.TextStyle(
                                 font: ttfBold,
                                 fontSize: 14,
@@ -301,7 +319,7 @@ class ReceiptService {
                                     pw.Padding(
                                       padding: const pw.EdgeInsets.all(10),
                                       child: pw.Text(
-                                        'Line Number',
+                                        'Line',
                                         style: pw.TextStyle(
                                           font: ttfBold,
                                           fontSize: 12,
@@ -311,7 +329,7 @@ class ReceiptService {
                                     pw.Padding(
                                       padding: const pw.EdgeInsets.all(10),
                                       child: pw.Text(
-                                        payment.userLineNumber ?? 'N/A',
+                                        _formatLineNumber(payment.userLineNumber ?? 'N/A'),
                                         style: pw.TextStyle(
                                           font: ttf,
                                           fontSize: 12,

@@ -350,7 +350,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
         color: AppColors.lightBlack,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(26), // 0.1 opacity = 26/255
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -363,7 +363,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: AppColors.buttonColor.withOpacity(0.2),
+                backgroundColor: AppColors.buttonColor.withAlpha(51), // 0.2 opacity = 51/255
                 child: Text(
                   _currentUser!.name?.isNotEmpty == true ? _currentUser!.name![0].toUpperCase() : 'U',
                   style: const TextStyle(
@@ -737,7 +737,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: AppColors.buttonColor.withOpacity(0.2),
+              backgroundColor: AppColors.buttonColor.withAlpha(51), // 0.2 opacity = 51/255
               child: Text(
                 user.name?.isNotEmpty == true ? user.name![0].toUpperCase() : 'U',
                 style: const TextStyle(
@@ -799,6 +799,18 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
       case AppConstants.fifthLine:
         return '5';
       default:
+        // Handle case where lineNumber might contain underscores
+        if (lineNumber.contains('_')) {
+          final parts = lineNumber.split('_');
+          if (parts.length > 1) {
+            // For display purposes, just return the number part if possible
+            if (parts[0] == 'FIRST') return '1';
+            if (parts[0] == 'SECOND') return '2';
+            if (parts[0] == 'THIRD') return '3';
+            if (parts[0] == 'FOURTH') return '4';
+            if (parts[0] == 'FIFTH') return '5';
+          }
+        }
         return lineNumber;
     }
   }
@@ -930,7 +942,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: Colors.green.withOpacity(0.2),
+              backgroundColor: Colors.green.withAlpha(51), // 0.2 opacity = 51/255
               child: const Icon(
                 Icons.check,
                 color: Colors.green,

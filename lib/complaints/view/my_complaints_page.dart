@@ -228,7 +228,7 @@ class _MyComplaintsPageState extends State<MyComplaintsPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
+                      color: statusColor.withAlpha(51), // 0.2 opacity = 51/255
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -259,12 +259,26 @@ class _MyComplaintsPageState extends State<MyComplaintsPage> {
                           color: Colors.grey,
                         ),
                   ),
-                  if (complaint.adminResponse != null)
-                    const Icon(
-                      Icons.comment,
-                      size: 16,
-                      color: Colors.blue,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (complaint.imageUrl != null)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8.0),
+                          child: Icon(
+                            Icons.image,
+                            size: 16,
+                            color: Colors.green,
+                          ),
+                        ),
+                      if (complaint.adminResponse != null)
+                        const Icon(
+                          Icons.comment,
+                          size: 16,
+                          color: Colors.blue,
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],

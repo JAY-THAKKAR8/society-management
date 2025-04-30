@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:injectable/injectable.dart';
+import 'package:path/path.dart' as path;
 import 'package:society_management/complaints/model/complaint_model.dart';
 import 'package:society_management/complaints/repository/i_complaint_repository.dart';
 import 'package:society_management/extentions/firestore_extentions.dart';
@@ -9,6 +13,8 @@ import 'package:society_management/utility/result.dart';
 @Injectable(as: IComplaintRepository)
 class ComplaintRepository extends IComplaintRepository {
   ComplaintRepository(super.firestore);
+
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // Helper method to convert status enum to string
   String _statusToString(ComplaintStatus status) {
@@ -25,6 +31,25 @@ class ComplaintRepository extends IComplaintRepository {
   }
 
   @override
+  FirebaseResult<String> uploadComplaintImage(String userId, String filePath) {
+    return Result<String>().tryCatch(
+      run: () async {
+        final File file = File(filePath);
+        final fileName = path.basename(file.path);
+        final destination = 'complaints/$userId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+
+        final ref = _storage.ref().child(destination);
+        final uploadTask = ref.putFile(file);
+        final snapshot = await uploadTask;
+
+        // Get download URL
+        final downloadUrl = await snapshot.ref.getDownloadURL();
+        return downloadUrl;
+      },
+    );
+  }
+
+  @override
   FirebaseResult<ComplaintModel> addComplaint({
     required String userId,
     required String userName,
@@ -32,6 +57,7 @@ class ComplaintRepository extends IComplaintRepository {
     required String? userLineNumber,
     required String title,
     required String description,
+    String? imageUrl,
   }) {
     return Result<ComplaintModel>().tryCatch(
       run: () async {
@@ -51,6 +77,7 @@ class ComplaintRepository extends IComplaintRepository {
           'description': description,
           'status': 'pending',
           'admin_response': null,
+          'image_url': imageUrl,
           'created_at': now,
           'updated_at': now,
         };
@@ -140,6 +167,46 @@ class ComplaintRepository extends IComplaintRepository {
         await activityDoc.set({
           'id': activityDoc.id,
           'message': '🔄 Complaint status updated to ${_statusToString(status)}: $title by $userName',
+          'type': 'complaint_update',
+          'timestamp': now,
+        });
+
+        // Get updated complaint
+        final updatedDoc = await complaintRef.get();
+        return ComplaintModel.fromJson(updatedDoc.data()!);
+      },
+    );
+  }
+
+  @override
+  FirebaseResult<ComplaintModel> updateComplaint(ComplaintModel complaint) {
+    return Result<ComplaintModel>().tryCatch(
+      run: () async {
+        if (complaint.id == null) {
+          throw Exception('Complaint ID cannot be null');
+        }
+
+        final now = Timestamp.now();
+        final complaintRef = firestore.collection('complaints').doc(complaint.id);
+        final complaintDoc = await complaintRef.get();
+
+        if (!complaintDoc.exists) {
+          throw Exception('Complaint not found');
+        }
+
+        // Convert the complaint to JSON and update the timestamp
+        final updateData = complaint.toJson();
+        updateData['updated_at'] = now;
+
+        await complaintRef.update(updateData);
+
+        // Log activity
+        final activityDoc = firestore.activities.doc();
+        final statusMessage = complaint.statusDisplayName;
+
+        await activityDoc.set({
+          'id': activityDoc.id,
+          'message': '🔄 Complaint updated to $statusMessage: ${complaint.title} by ${complaint.userName}',
           'type': 'complaint_update',
           'timestamp': now,
         });

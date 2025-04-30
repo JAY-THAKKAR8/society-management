@@ -23,6 +23,7 @@ class ComplaintModel extends Equatable {
     this.adminResponse,
     this.createdAt,
     this.updatedAt,
+    this.imageUrl,
   });
 
   factory ComplaintModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +37,7 @@ class ComplaintModel extends Equatable {
       description: json['description'] as String?,
       status: _statusFromString(json['status'] as String?),
       adminResponse: json['admin_response'] as String?,
+      imageUrl: json['image_url'] as String?,
       createdAt: json['created_at'] != null
           ? (json['created_at'] is Timestamp
               ? (json['created_at'] as Timestamp).toDate().toString()
@@ -58,6 +60,7 @@ class ComplaintModel extends Equatable {
   final String? description;
   final ComplaintStatus status;
   final String? adminResponse;
+  final String? imageUrl;
   final String? createdAt;
   final String? updatedAt;
 
@@ -71,6 +74,7 @@ class ComplaintModel extends Equatable {
     String? description,
     ComplaintStatus? status,
     String? adminResponse,
+    String? imageUrl,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -84,6 +88,7 @@ class ComplaintModel extends Equatable {
       description: description ?? this.description,
       status: status ?? this.status,
       adminResponse: adminResponse ?? this.adminResponse,
+      imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -99,6 +104,7 @@ class ComplaintModel extends Equatable {
         'description': description,
         'status': _statusToString(status),
         'admin_response': adminResponse,
+        'image_url': imageUrl,
         'created_at': createdAt,
         'updated_at': updatedAt,
       };
@@ -114,6 +120,7 @@ class ComplaintModel extends Equatable {
         description,
         status,
         adminResponse,
+        imageUrl,
         createdAt,
         updatedAt,
       ];

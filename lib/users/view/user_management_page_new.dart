@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:gap/gap.dart';
-import 'package:society_management/auth/repository/auth_repository.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
+import 'package:society_management/injector/injector.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/users/view/add_user_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
-import 'package:society_management/widget/app_drop_down_widget.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
 import 'package:society_management/widget/common_app_bar.dart';
-import 'package:society_management/widget/common_button.dart';
-import 'package:society_management/injector/injector.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -163,7 +158,7 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
   Widget _buildUserCard(BuildContext context, UserModel user) {
     final bool isAdmin = user.role == AppConstants.admin;
     final bool isLineHead = user.role == AppConstants.lineLead;
-    
+
     Color roleColor;
     if (isAdmin) {
       roleColor = Colors.red;
@@ -179,9 +174,11 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isAdmin ? Colors.red.withAlpha(100) : 
-                 isLineHead ? Colors.blue.withAlpha(100) : 
-                 Colors.white.withAlpha(25),
+          color: isAdmin
+              ? Colors.red.withAlpha(100)
+              : isLineHead
+                  ? Colors.blue.withAlpha(100)
+                  : Colors.white.withAlpha(25),
           width: isAdmin || isLineHead ? 1.5 : 1.0,
         ),
       ),
@@ -334,7 +331,7 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
   void _showResetPasswordDialog(BuildContext context, UserModel user) {
     final passwordController = TextEditingController();
     bool isLoading = false;
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -378,15 +375,15 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
                             Utility.toast(message: 'Password must be at least 6 characters');
                             return;
                           }
-                          
+
                           setState(() {
                             isLoading = true;
                           });
-                          
+
                           try {
                             // TODO: Implement password reset functionality
                             await Future.delayed(const Duration(seconds: 1));
-                            
+
                             if (mounted) {
                               Navigator.of(context).pop();
                               Utility.toast(message: 'Password reset successfully');

@@ -331,7 +331,8 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isLineHead ? Colors.blue.withOpacity(0.2) : AppColors.buttonColor.withOpacity(0.2),
+              color:
+                  isLineHead ? Colors.blue.withAlpha(51) : AppColors.buttonColor.withAlpha(51), // 0.2 opacity = 51/255
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -371,7 +372,7 @@ class _LineMemberDashboardState extends State<LineMemberDashboard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.2),
+                color: Colors.blue.withAlpha(51), // 0.2 opacity = 51/255
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

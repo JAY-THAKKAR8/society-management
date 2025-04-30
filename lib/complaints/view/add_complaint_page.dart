@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/complaints/repository/i_complaint_repository.dart';
+import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
@@ -23,8 +27,11 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _isLoading = ValueNotifier<bool>(false);
+  final _imagePicker = ImagePicker();
   UserModel? _currentUser;
   bool _isInitializing = true;
+  File? _selectedImage;
+  String? _imageUrl;
 
   @override
   void initState() {
@@ -55,6 +62,70 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      Utility.toast(message: 'Error picking image: $e');
+    }
+  }
+
+  Future<void> _takeScreenshot() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      Utility.toast(message: 'Error taking screenshot: $e');
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedImage = null;
+      _imageUrl = null;
+    });
+  }
+
+  Future<void> _uploadImage() async {
+    if (_selectedImage == null || _currentUser == null) return;
+
+    try {
+      final complaintRepository = getIt<IComplaintRepository>();
+      final result = await complaintRepository.uploadComplaintImage(
+        _currentUser!.id!,
+        _selectedImage!.path,
+      );
+
+      result.fold(
+        (failure) {
+          Utility.toast(message: 'Failed to upload image: ${failure.message}');
+        },
+        (url) {
+          _imageUrl = url;
+        },
+      );
+    } catch (e) {
+      Utility.toast(message: 'Error uploading image: $e');
+    }
+  }
+
   Future<void> _submitComplaint() async {
     if (_formKey.currentState!.validate()) {
       if (_currentUser == null) {
@@ -65,6 +136,11 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
       _isLoading.value = true;
 
       try {
+        // Upload image if selected
+        if (_selectedImage != null) {
+          await _uploadImage();
+        }
+
         final complaintRepository = getIt<IComplaintRepository>();
         final result = await complaintRepository.addComplaint(
           userId: _currentUser!.id!,
@@ -73,6 +149,7 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
           userLineNumber: _currentUser!.lineNumber,
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim(),
+          imageUrl: _imageUrl,
         );
 
         result.fold(
@@ -144,6 +221,8 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
                         LengthLimitingTextInputFormatter(1000),
                       ],
                     ),
+                    const Gap(20),
+                    _buildImageSection(),
                     const Gap(30),
                     ValueListenableBuilder<bool>(
                       valueListenable: _isLoading,
@@ -178,8 +257,7 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
             ),
             const Gap(12),
             _buildInfoRow('Name', _currentUser?.name ?? 'Not available'),
-            if (_currentUser?.villNumber != null)
-              _buildInfoRow('Villa Number', _currentUser!.villNumber!),
+            if (_currentUser?.villNumber != null) _buildInfoRow('Villa Number', _currentUser!.villNumber!),
             _buildInfoRow('Line', _currentUser?.userLineViewString ?? 'Not assigned'),
           ],
         ),
@@ -205,6 +283,114 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
                 ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Attach Screenshot (Optional)',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const Gap(12),
+        if (_selectedImage != null) ...[
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.withAlpha(100)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    _selectedImage!,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: InkWell(
+                  onTap: _removeImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withAlpha(200),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildImagePickerButton(
+                icon: Icons.photo_library,
+                label: 'Gallery',
+                onTap: _pickImage,
+              ),
+              _buildImagePickerButton(
+                icon: Icons.camera_alt,
+                label: 'Camera',
+                onTap: _takeScreenshot,
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildImagePickerButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: 150,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.lightBlack,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withAlpha(100)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: AppColors.buttonColor,
+            ),
+            const Gap(8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.buttonColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
