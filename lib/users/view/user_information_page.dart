@@ -7,12 +7,14 @@ import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
+import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/users/view/add_user_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
+import 'package:society_management/widget/theme_aware_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserInformationPage extends StatefulWidget {
@@ -502,7 +504,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.lightBlack,
+            color: ThemeUtils.getContainerColor(context),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -554,7 +556,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: ThemeUtils.getHighlightColor(context, color),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -602,7 +604,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.lightBlack,
+            color: ThemeUtils.getContainerColor(context),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -631,7 +633,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppColors.buttonColor.withOpacity(0.1),
+              color: ThemeUtils.getHighlightColor(context, ThemeUtils.getPrimaryColor(context)),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
@@ -656,7 +658,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.buttonColor.withOpacity(0.1),
+              color: ThemeUtils.getHighlightColor(context, ThemeUtils.getPrimaryColor(context)),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
@@ -693,7 +695,7 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.buttonColor.withOpacity(0.1),
+            color: ThemeUtils.getHighlightColor(context, ThemeUtils.getPrimaryColor(context)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -725,12 +727,10 @@ class _UserInformationPageState extends State<UserInformationPage> with SingleTi
   }
 
   Widget _buildContactCard(UserModel user) {
-    return Card(
+    return ThemeAwareCard(
       margin: const EdgeInsets.only(bottom: 8),
-      color: AppColors.lightBlack,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      borderRadius: BorderRadius.circular(8),
+      useContainerColor: true,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(

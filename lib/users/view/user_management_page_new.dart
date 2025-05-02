@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/injector/injector.dart';
+import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/users/view/add_user_page.dart';
@@ -9,6 +10,7 @@ import 'package:society_management/utility/extentions/navigation_extension.dart'
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
 import 'package:society_management/widget/common_app_bar.dart';
+import 'package:society_management/widget/theme_aware_card.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -168,19 +170,21 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
       roleColor = AppColors.buttonColor;
     }
 
-    return Card(
+    final isDarkMode = ThemeUtils.isDarkMode(context);
+
+    return ThemeAwareCard(
       margin: const EdgeInsets.only(bottom: 12),
-      color: AppColors.lightBlack,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isAdmin
-              ? Colors.red.withAlpha(100)
-              : isLineHead
-                  ? Colors.blue.withAlpha(100)
-                  : Colors.white.withAlpha(25),
-          width: isAdmin || isLineHead ? 1.5 : 1.0,
-        ),
+      useContainerColor: true,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: isAdmin
+            ? Colors.red.withAlpha(isDarkMode ? 100 : 150)
+            : isLineHead
+                ? Colors.blue.withAlpha(isDarkMode ? 100 : 150)
+                : isDarkMode
+                    ? Colors.white.withAlpha(25)
+                    : AppColors.lightDivider,
+        width: isAdmin || isLineHead ? 1.5 : 1.0,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -338,7 +342,7 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              backgroundColor: AppColors.lightBlack,
+              backgroundColor: ThemeUtils.getContainerColor(context),
               title: Text('Reset Password for ${user.name}'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,

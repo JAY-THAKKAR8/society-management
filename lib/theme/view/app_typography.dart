@@ -4,7 +4,7 @@ import 'package:society_management/constants/app_colors.dart';
 class LightAppTypography {
   static const _fontFamily = 'SFProDisplay';
 
-  static const _style = TextStyle(fontFamily: _fontFamily, color: AppColors.white);
+  static const _style = TextStyle(fontFamily: _fontFamily, color: AppColors.lightText);
 
   static TextStyle displayLarge = _style.copyWith(
     fontSize: 96,

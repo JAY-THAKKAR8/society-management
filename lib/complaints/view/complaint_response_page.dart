@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:society_management/complaints/model/complaint_model.dart';
 import 'package:society_management/complaints/repository/i_complaint_repository.dart';
-import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/injector/injector.dart';
+import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
 import 'package:society_management/widget/common_app_bar.dart';
 import 'package:society_management/widget/common_button.dart';
+import 'package:society_management/widget/theme_aware_card.dart';
 
 class ComplaintResponsePage extends StatefulWidget {
   final ComplaintModel complaint;
@@ -143,11 +144,9 @@ class _ComplaintResponsePageState extends State<ComplaintResponsePage> {
   }
 
   Widget _buildComplaintDetailsCard(String formattedDate) {
-    return Card(
-      color: AppColors.lightBlack,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return ThemeAwareCard(
+      useContainerColor: true,
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -244,7 +243,7 @@ class _ComplaintResponsePageState extends State<ComplaintResponsePage> {
   Widget _buildStatusSelector() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.lightBlack,
+        color: ThemeUtils.getContainerColor(context),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

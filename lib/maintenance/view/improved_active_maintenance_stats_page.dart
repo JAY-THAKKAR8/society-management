@@ -8,9 +8,11 @@ import 'package:society_management/maintenance/model/maintenance_period_model.da
 import 'package:society_management/maintenance/model/maintenance_stats_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/line_maintenance_details_page.dart';
+import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
+import 'package:society_management/widget/theme_aware_card.dart';
 import 'package:society_management/widget/trading_style_button.dart';
 
 class ImprovedActiveMaintenanceStatsPage extends StatefulWidget {
@@ -295,14 +297,12 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
   }
 
   Widget _buildActivePeriodsSummary() {
-    return Card(
-      color: AppColors.lightBlack,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Colors.blue.withAlpha(76),
-          width: 1,
-        ),
+    return ThemeAwareCard(
+      useContainerColor: true,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: ThemeUtils.getHighlightColor(context, Colors.blue, opacity: 0.3),
+        width: 1,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -323,7 +323,7 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withAlpha(25),
+                    color: ThemeUtils.getHighlightColor(context, Colors.blue),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -404,12 +404,10 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
       final collectionPercentage = stats.totalAmount > 0 ? (stats.collectedAmount / stats.totalAmount) * 100 : 0.0;
 
       widgets.add(
-        Card(
+        ThemeAwareCard(
           margin: const EdgeInsets.only(bottom: 16),
-          color: AppColors.lightBlack,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          useContainerColor: true,
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -433,7 +431,7 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withAlpha(25),
+                        color: ThemeUtils.getHighlightColor(context, Colors.blue),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -477,7 +475,8 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
                 const SizedBox(height: 16),
                 LinearProgressIndicator(
                   value: collectionPercentage / 100,
-                  backgroundColor: Colors.grey.withAlpha(50),
+                  backgroundColor:
+                      ThemeUtils.isDarkMode(context) ? Colors.grey.withAlpha(50) : Colors.grey.withAlpha(30),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     collectionPercentage > 75
                         ? Colors.green

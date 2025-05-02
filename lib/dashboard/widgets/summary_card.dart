@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/theme/theme_utils.dart';
 
 class SummaryCard extends StatelessWidget {
   final IconData icon;
@@ -22,17 +23,18 @@ class SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final effectiveIconColor = iconColor ?? AppColors.buttonColor;
-    final effectiveIconBgColor = iconBackgroundColor ?? effectiveIconColor.withOpacity(0.15);
+    final effectiveIconColor = iconColor ?? ThemeUtils.getPrimaryColor(context);
+    final effectiveIconBgColor =
+        iconBackgroundColor ?? ThemeUtils.getHighlightColor(context, effectiveIconColor, opacity: 0.15);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.lightBlack,
+          color: ThemeUtils.getContainerColor(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.white.withOpacity(0.1)),
+          border: Border.all(color: ThemeUtils.getBorderColor(context)),
         ),
         child: Column(
           children: [

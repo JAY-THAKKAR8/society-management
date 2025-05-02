@@ -281,13 +281,19 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
     final collectionPercentage =
         (totalCollected + totalPending) > 0 ? (totalCollected / (totalCollected + totalPending)) * 100 : 0.0;
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      color: AppColors.lightBlack,
+      color: isDarkMode ? AppColors.darkCard : AppColors.lightContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: period.isActive ? Colors.green.withAlpha(100) : Colors.white.withAlpha(25),
+          color: period.isActive
+              ? Colors.green.withAlpha(isDarkMode ? 100 : 150)
+              : isDarkMode
+                  ? Colors.white.withAlpha(25)
+                  : AppColors.lightDivider,
           width: period.isActive ? 1.5 : 1.0,
         ),
       ),

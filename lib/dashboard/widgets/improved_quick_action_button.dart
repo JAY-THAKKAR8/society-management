@@ -7,6 +7,7 @@ class ImprovedQuickActionButton extends StatelessWidget {
   final Color startColor;
   final Color endColor;
   final Color textColor;
+  final double elevation;
 
   const ImprovedQuickActionButton({
     super.key,
@@ -16,18 +17,21 @@ class ImprovedQuickActionButton extends StatelessWidget {
     required this.startColor,
     required this.endColor,
     this.textColor = Colors.white,
+    this.elevation = 3,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: endColor.withAlpha(40),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            blurRadius: elevation * 3,
+            offset: Offset(0, elevation),
           ),
         ],
         gradient: LinearGradient(
@@ -49,7 +53,7 @@ class ImprovedQuickActionButton extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(30),
+                    color: Colors.white.withAlpha(isDarkMode ? 30 : 50),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(

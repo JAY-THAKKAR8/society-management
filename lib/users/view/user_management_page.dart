@@ -168,17 +168,21 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
       roleColor = AppColors.buttonColor;
     }
 
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: AppColors.lightBlack,
+      color: isDarkMode ? AppColors.darkCard : AppColors.lightContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: isAdmin
-              ? Colors.red.withAlpha(100)
+              ? Colors.red.withAlpha(isDarkMode ? 100 : 150)
               : isLineHead
-                  ? Colors.blue.withAlpha(100)
-                  : Colors.white.withAlpha(25),
+                  ? Colors.blue.withAlpha(isDarkMode ? 100 : 150)
+                  : isDarkMode
+                      ? Colors.white.withAlpha(25)
+                      : AppColors.lightDivider,
           width: isAdmin || isLineHead ? 1.5 : 1.0,
         ),
       ),
@@ -318,8 +322,8 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
             icon: const Icon(Icons.add),
             label: const Text('Add New User'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.buttonColor,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
@@ -337,8 +341,10 @@ class _UserManagementPageState extends State<UserManagementPage> with SingleTick
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
             return AlertDialog(
-              backgroundColor: AppColors.lightBlack,
+              backgroundColor: isDarkMode ? AppColors.darkCard : AppColors.lightContainer,
               title: Text('Reset Password for ${user.name}'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,

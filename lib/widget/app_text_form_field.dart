@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/extentions/colors_extnetions.dart';
 
 class AppTextFormField extends StatelessWidget {
@@ -91,7 +92,7 @@ class AppTextFormField extends StatelessWidget {
             onTapOutside: (event) {
               FocusManager.instance.primaryFocus?.unfocus();
             },
-            cursorColor: AppColors.white,
+            cursorColor: ThemeUtils.getPrimaryColor(context),
             style: textStyle ?? Theme.of(context).textTheme.bodyLarge,
             readOnly: readOnly,
             validator: validator,
@@ -107,6 +108,24 @@ class AppTextFormField extends StatelessWidget {
               prefixIconConstraints: prefixIcon != null ? BoxConstraints(maxWidth: maxWidthOfPrefix ?? 48.0) : null,
               contentPadding: contentPadding,
               hintStyle: hintStyle,
+              fillColor: ThemeUtils.getInputFieldColor(context),
+              filled: true,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: ThemeUtils.getBorderColor(context)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: ThemeUtils.getPrimaryColor(context)),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: ThemeUtils.getErrorColor(context)),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: ThemeUtils.getErrorColor(context), width: 1.5),
+              ),
             ),
           ),
         ),

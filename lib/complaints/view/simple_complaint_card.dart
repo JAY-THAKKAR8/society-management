@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:society_management/complaints/model/complaint_model.dart';
 import 'package:society_management/complaints/view/complaint_response_page.dart';
-import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 
@@ -35,7 +35,7 @@ class SimpleComplaintCard extends StatelessWidget {
       // Status color with safe default
       Color statusColor = Colors.grey; // Default color
       IconData statusIcon = Icons.help_outline; // Default icon
-      
+
       try {
         switch (complaint.status) {
           case ComplaintStatus.pending:
@@ -64,11 +64,11 @@ class SimpleComplaintCard extends StatelessWidget {
 
       return Card(
         margin: const EdgeInsets.only(bottom: 16),
-        color: AppColors.lightBlack,
+        color: ThemeUtils.getContainerColor(context),
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: statusColor.withAlpha(50)),
+          side: BorderSide(color: ThemeUtils.getHighlightColor(context, statusColor, opacity: 0.2)),
         ),
         child: InkWell(
           onTap: () async {
@@ -127,7 +127,7 @@ class SimpleComplaintCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Content
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -144,7 +144,7 @@ class SimpleComplaintCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Description
                     Text(
                       complaint.description ?? 'No description',
@@ -153,7 +153,7 @@ class SimpleComplaintCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // User info - simplified to avoid layout issues
                     Row(
                       children: [
@@ -162,22 +162,20 @@ class SimpleComplaintCard extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: AppColors.buttonColor.withAlpha(50),
+                            color: ThemeUtils.getHighlightColor(context, ThemeUtils.getPrimaryColor(context)),
                             shape: BoxShape.circle,
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            complaint.userName?.isNotEmpty == true 
-                                ? complaint.userName![0].toUpperCase() 
-                                : '?',
-                            style: const TextStyle(
+                            complaint.userName?.isNotEmpty == true ? complaint.userName![0].toUpperCase() : '?',
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: AppColors.buttonColor,
+                              color: ThemeUtils.getPrimaryColor(context),
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        
+
                         // User details
                         Expanded(
                           child: Column(
@@ -203,7 +201,7 @@ class SimpleComplaintCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        
+
                         // Image indicator - simplified
                         if (complaint.imageUrl != null)
                           Container(
@@ -220,7 +218,7 @@ class SimpleComplaintCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                    
+
                     // Admin response preview - simplified
                     if (complaint.status != ComplaintStatus.pending && complaint.adminResponse != null) ...[
                       const Divider(height: 24),
@@ -242,7 +240,7 @@ class SimpleComplaintCard extends StatelessWidget {
                         ],
                       ),
                     ],
-                    
+
                     // Action button for pending complaints - simplified
                     if (complaint.status == ComplaintStatus.pending) ...[
                       const SizedBox(height: 16),
@@ -262,7 +260,7 @@ class SimpleComplaintCard extends StatelessWidget {
                           icon: const Icon(Icons.reply, size: 16),
                           label: const Text('Respond'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.buttonColor,
+                            backgroundColor: ThemeUtils.getPrimaryColor(context),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
@@ -292,7 +290,7 @@ class SimpleComplaintCard extends StatelessWidget {
 
   String _formatLineNumber(String? lineNumber) {
     if (lineNumber == null) return 'N/A';
-    
+
     switch (lineNumber) {
       case 'FIRST_LINE':
         return 'Line 1';

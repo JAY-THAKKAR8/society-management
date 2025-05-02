@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:society_management/constants/app_colors.dart';
-import 'package:society_management/utility/extentions/colors_extnetions.dart';
+import 'package:society_management/theme/theme_utils.dart';
 
 class AppDropDown<T> extends StatelessWidget {
   const AppDropDown(
@@ -50,16 +49,18 @@ class AppDropDown<T> extends StatelessWidget {
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             hintText: hintText,
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-            fillColor: AppColors.lightBlack,
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: ThemeUtils.getTextColor(context, secondary: true),
+                ),
+            fillColor: ThemeUtils.getDropdownColor(context),
             filled: true,
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: AppColors.white.withOpacity2(0.2)),
+              borderSide: BorderSide(color: ThemeUtils.getPrimaryColor(context)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: AppColors.white.withOpacity2(0.2)),
+              borderSide: BorderSide(color: ThemeUtils.getBorderColor(context)),
             ),
           ),
           items: items,

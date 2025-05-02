@@ -4,9 +4,11 @@ import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/dashboard/widgets/improved_quick_actions_section.dart';
 import 'package:society_management/dashboard/widgets/improved_summary_section.dart';
+import 'package:society_management/settings/view/settings_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/screenshot_utility.dart';
 import 'package:society_management/utility/utility.dart';
+import 'package:society_management/widget/common_gradient_card.dart';
 import 'package:society_management/widget/kdv_logo.dart';
 
 class ImprovedAdminDashboardWithScreenshot extends StatefulWidget {
@@ -16,7 +18,8 @@ class ImprovedAdminDashboardWithScreenshot extends StatefulWidget {
   State<ImprovedAdminDashboardWithScreenshot> createState() => _ImprovedAdminDashboardWithScreenshotState();
 }
 
-class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDashboardWithScreenshot> with SingleTickerProviderStateMixin {
+class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDashboardWithScreenshot>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   final GlobalKey<ImprovedSummarySectionState> _summaryKey = GlobalKey();
@@ -57,10 +60,9 @@ class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDash
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                AppColors.primary,
-                AppColors.primary.withBlue(40),
-              ],
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [AppColors.darkBackground, AppColors.darkBackground.withBlue(40)]
+                  : AppColors.gradientLightPrimary,
             ),
           ),
           child: SafeArea(
@@ -73,29 +75,30 @@ class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDash
                     backgroundColor: Colors.transparent,
                     floating: true,
                     elevation: 0,
-                    title: Row(
+                    title: const Row(
                       children: [
-                        const KDVLogo(
+                        KDVLogo(
                           size: 40,
                           primaryColor: AppColors.buttonColor,
                           secondaryColor: Colors.white,
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'KDV Management',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                             Text(
                               'Admin Dashboard',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.white.withAlpha(180),
+                                color: Colors.white70,
                               ),
                             ),
                           ],
@@ -104,25 +107,27 @@ class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDash
                     ),
                     actions: [
                       IconButton(
-                        icon: const Icon(Icons.camera_alt),
+                        icon: const Icon(Icons.camera_alt, color: Colors.white),
                         tooltip: 'Take Screenshot',
                         onPressed: () {
                           ScreenshotUtility.captureAndShareScreenshot(context);
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.info_outline),
+                        icon: const Icon(Icons.settings, color: Colors.white),
+                        tooltip: 'Settings',
                         onPressed: () {
-                          // Show society info
+                          context.push(const SettingsPage());
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.logout),
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                        tooltip: 'Logout',
                         onPressed: _logout,
                       ),
                     ],
                   ),
-                  
+
                   // Dashboard Content
                   SliverToBoxAdapter(
                     child: FadeTransition(
@@ -135,11 +140,11 @@ class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDash
                             // Welcome message
                             _buildWelcomeSection(),
                             const SizedBox(height: 24),
-                            
+
                             // Summary cards
                             ImprovedSummarySection(key: _summaryKey),
                             const SizedBox(height: 32),
-                            
+
                             // Quick actions
                             const ImprovedQuickActionsSection(),
                             const SizedBox(height: 24),
@@ -158,43 +163,33 @@ class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDash
   }
 
   Widget _buildWelcomeSection() {
-    return Container(
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return CommonGradientCard(
+      gradientColors: isDarkMode ? AppColors.gradientPurplePink : AppColors.gradientLightAccent,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4158D0), Color(0xFFC850C0)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFC850C0).withAlpha(40),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Welcome, Admin!',
                   style: TextStyle(
                     fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.15,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'Manage your society with ease',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withAlpha(200),
+                    letterSpacing: 0.25,
+                    color: Colors.white,
                   ),
                 ),
               ],
@@ -203,7 +198,7 @@ class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDash
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(30),
+              color: Colors.white.withAlpha(50),
               shape: BoxShape.circle,
             ),
             child: const Icon(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/complaints/view/basic_complaints_page.dart';
+import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/dashboard/widgets/improved_quick_action_button.dart';
 import 'package:society_management/expenses/view/add_expense_page.dart';
 import 'package:society_management/maintenance/view/improved_active_maintenance_stats_page.dart';
@@ -41,8 +42,12 @@ class ImprovedQuickActionsSection extends StatelessWidget {
         ImprovedQuickActionButton(
           icon: Icons.people,
           label: "Manage Users",
-          startColor: const Color(0xFF6A11CB),
-          endColor: const Color(0xFF2575FC),
+          startColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientPurpleBlue[0]
+              : AppColors.gradientLightPrimary[0],
+          endColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientPurpleBlue[1]
+              : AppColors.gradientLightPrimary[1],
           onPressed: () {
             context.push(const UserManagementPage());
           },
@@ -52,8 +57,12 @@ class ImprovedQuickActionsSection extends StatelessWidget {
         ImprovedQuickActionButton(
           icon: Icons.calendar_today,
           label: "Manage Maintenance",
-          startColor: const Color(0xFFFF416C),
-          endColor: const Color(0xFFFF4B2B),
+          startColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientRedPink[0]
+              : AppColors.gradientLightRed[0],
+          endColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientRedPink[1]
+              : AppColors.gradientLightRed[1],
           onPressed: () {
             context.push(const MaintenancePeriodsPage());
           },
@@ -63,8 +72,12 @@ class ImprovedQuickActionsSection extends StatelessWidget {
         ImprovedQuickActionButton(
           icon: Icons.bar_chart,
           label: "Maintenance Stats",
-          startColor: const Color(0xFF00B4DB),
-          endColor: const Color(0xFF0083B0),
+          startColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientBlueAqua[0]
+              : AppColors.gradientLightBlue[0],
+          endColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientBlueAqua[1]
+              : AppColors.gradientLightBlue[1],
           onPressed: () {
             context.push(const ImprovedActiveMaintenanceStatsPage());
           },
@@ -74,8 +87,12 @@ class ImprovedQuickActionsSection extends StatelessWidget {
         ImprovedQuickActionButton(
           icon: Icons.account_balance_wallet,
           label: "Manage Expenses",
-          startColor: const Color(0xFF11998E),
-          endColor: const Color(0xFF38EF7D),
+          startColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientGreenTeal[0]
+              : AppColors.gradientLightGreen[0],
+          endColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientGreenTeal[1]
+              : AppColors.gradientLightGreen[1],
           onPressed: () {
             context.push(const AddExpensePage());
           },
@@ -85,8 +102,12 @@ class ImprovedQuickActionsSection extends StatelessWidget {
         ImprovedQuickActionButton(
           icon: Icons.comment,
           label: "Manage Complaints",
-          startColor: const Color(0xFFFF8008),
-          endColor: const Color(0xFFFFC837),
+          startColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientOrangeYellow[0]
+              : AppColors.gradientLightOrange[0],
+          endColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientOrangeYellow[1]
+              : AppColors.gradientLightOrange[1],
           onPressed: () {
             context.push(const BasicComplaintsPage());
           },
@@ -96,8 +117,12 @@ class ImprovedQuickActionsSection extends StatelessWidget {
         ImprovedQuickActionButton(
           icon: Icons.info,
           label: "Society Information",
-          startColor: const Color(0xFF4158D0),
-          endColor: const Color(0xFFC850C0),
+          startColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientPurplePink[0]
+              : AppColors.gradientLightPurple[0],
+          endColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientPurplePink[1]
+              : AppColors.gradientLightPurple[1],
           onPressed: () {
             context.push(const UserInformationPage());
           },
