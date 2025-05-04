@@ -7,12 +7,41 @@ class ExpenseItemModel extends Equatable {
     this.price,
   });
 
+  // Helper method to safely parse amount values
+  static double? _parseAmount(dynamic value) {
+    if (value == null) return null;
+
+    try {
+      if (value is double) {
+        return value;
+      } else if (value is int) {
+        return value.toDouble();
+      } else if (value is String) {
+        return double.tryParse(value);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // Return null on parsing error
+      return null;
+    }
+  }
+
   factory ExpenseItemModel.fromJson(Map<String, dynamic> json) {
-    return ExpenseItemModel(
-      id: json['id'] as String?,
-      name: json['name'] as String?,
-      price: json['price'] as double?,
-    );
+    try {
+      return ExpenseItemModel(
+        id: json['id'] as String?,
+        name: json['name'] as String?,
+        price: json['price'] is int ? (json['price'] as int).toDouble() : json['price'] as double?,
+      );
+    } catch (e) {
+      // Fallback with safer parsing
+      return ExpenseItemModel(
+        id: json['id']?.toString(),
+        name: json['name']?.toString(),
+        price: _parseAmount(json['price']),
+      );
+    }
   }
 
   final String? id;

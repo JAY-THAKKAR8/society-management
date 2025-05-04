@@ -4,8 +4,8 @@ import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
-import 'package:society_management/dashboard/line_head_dashboard.dart';
-import 'package:society_management/dashboard/line_member_dashboard.dart';
+import 'package:society_management/dashboard/view/fixed_line_head_dashboard.dart';
+import 'package:society_management/dashboard/view/fixed_line_member_dashboard.dart';
 import 'package:society_management/dashboard/view/improved_admin_dashboard_with_screenshot.dart';
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
@@ -57,13 +57,13 @@ class _SplashPageState extends State<SplashPage> {
 
             // Then route based on user role
             if (user.role == AppConstants.lineMember) {
-              context.pushAndRemoveUntil(const LineMemberDashboard());
+              context.pushAndRemoveUntil(const ImprovedLineMemberDashboard());
             } else if (user.role == AppConstants.lineLead) {
-              context.pushAndRemoveUntil(const LineHeadDashboard());
+              context.pushAndRemoveUntil(const ImprovedLineHeadDashboard());
             } else if (user.role == AppConstants.lineHeadAndMember) {
               // For combined role, default to Line Head dashboard
               // User can choose different dashboard on next login
-              context.pushAndRemoveUntil(const LineHeadDashboard());
+              context.pushAndRemoveUntil(const ImprovedLineHeadDashboard());
             } else {
               context.pushAndRemoveUntil(const ImprovedAdminDashboardWithScreenshot());
             }

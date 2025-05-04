@@ -18,6 +18,7 @@ class AppColors {
   static const gradientGreenTeal = [Color(0xFF43A047), Color(0xFF26A69A)]; // Green to Teal
   static const gradientOrangeYellow = [Color(0xFFFF9800), Color(0xFFFFB300)]; // Orange to Amber
   static const gradientPurplePink = [Color(0xFF7C4DFF), Color(0xFFE040FB)]; // Deep Purple to Purple
+  static const gradientBlueIndigo = [Color(0xFF1976D2), Color(0xFF3F51B5)]; // Blue to Indigo
 
   // Modern Light theme gradients (2024 trend)
   static const gradientLightPrimary = [Color(0xFF6366F1), Color(0xFF4F46E5)]; // Indigo-500 to Indigo-600

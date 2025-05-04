@@ -5,8 +5,9 @@ import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/dashboard/widgets/quick_actions_section_new.dart';
 import 'package:society_management/dashboard/widgets/recent_activity_section.dart';
 import 'package:society_management/dashboard/widgets/summary_section.dart';
-import 'package:society_management/expenses/view/add_expense_page.dart';
+import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
+import 'package:society_management/settings/view/settings_page.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/users/view/user_management_page.dart';
@@ -97,6 +98,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
             tooltip: 'Society Information',
           ),
           IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              context.push(const SettingsPage());
+            },
+            tooltip: 'Settings',
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
             tooltip: 'Logout',
@@ -121,8 +129,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       _activityKey.currentState?.refreshActivities();
                     },
                     onAddExpense: () async {
-                      // Navigate to add expense page and refresh when returning
-                      await context.push(const AddExpensePage());
+                      // Navigate to expense dashboard page and refresh when returning
+                      await context.push(const ExpenseDashboardPage());
                       // Refresh both dashboard sections
                       _summaryKey.currentState?.refreshStats();
                       _activityKey.currentState?.refreshActivities();

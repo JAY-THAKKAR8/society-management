@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/line_member_dashboard.dart';
 import 'package:society_management/dashboard/widgets/line_head_activity_section.dart';
 import 'package:society_management/dashboard/widgets/line_head_quick_actions.dart';
 import 'package:society_management/dashboard/widgets/line_head_summary_section.dart';
+import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/line_head_alert_dialog.dart';
+import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
+import 'package:society_management/widget/common_gradient_app_bar.dart';
 
 class LineHeadDashboard extends StatefulWidget {
   const LineHeadDashboard({super.key});
@@ -196,15 +200,12 @@ class _LineHeadDashboardState extends State<LineHeadDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Welcome, ${_currentUser?.name ?? 'Line Head'}",
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        backgroundColor: AppColors.primary,
+      appBar: CommonGradientAppBar(
+        title: "Welcome, ${_currentUser?.name ?? 'Line Head'}",
+        gradientColors: AppColors.gradientGreenTeal,
         actions: [
           // Show switch to member view button only for LINE_HEAD_MEMBER users
-          if (_currentUser?.role == 'LINE_HEAD_MEMBER')
+          if (_currentUser?.role == AppConstants.lineHeadAndMember)
             IconButton(
               icon: const Icon(Icons.switch_account),
               onPressed: _switchToMemberView,
@@ -220,16 +221,25 @@ class _LineHeadDashboardState extends State<LineHeadDashboard> {
             tooltip: 'Refresh dashboard',
           ),
           IconButton(
+            icon: const Icon(Icons.bar_chart),
+            onPressed: () {
+              context.push(const ExpenseDashboardPage());
+            },
+            tooltip: 'Expense Dashboard',
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              context.push(const CommonSettingsPage());
+            },
+            tooltip: 'Settings',
+          ),
+          IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () {
               context.push(UserInformationPage(user: _currentUser));
             },
             tooltip: 'Society Information',
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-            tooltip: 'Logout',
           ),
         ],
       ),

@@ -6,32 +6,38 @@ import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/settings/view/admin_settings_page.dart';
+import 'package:society_management/settings/view/user_profile_page.dart';
 import 'package:society_management/theme/theme_provider.dart';
+import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
+import 'package:society_management/utility/screenshot_utility.dart';
 import 'package:society_management/utility/utility.dart';
-import 'package:society_management/widget/common_card.dart';
 import 'package:society_management/widget/common_gradient_app_bar.dart';
+import 'package:society_management/widget/role_themed_card.dart';
 import 'package:society_management/widget/theme_switcher.dart';
 
-class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+class CommonSettingsPage extends StatefulWidget {
+  const CommonSettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  State<CommonSettingsPage> createState() => _CommonSettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
-  bool _isAdmin = false;
+class _CommonSettingsPageState extends State<CommonSettingsPage> {
+  UserModel? _currentUser;
   bool _isLoading = true;
+  bool _isAdmin = false;
+  bool _isLineHead = false;
+  bool _isLineMember = false;
 
   @override
   void initState() {
     super.initState();
-    _checkIfAdmin();
+    _getCurrentUser();
   }
 
-  Future<void> _checkIfAdmin() async {
+  Future<void> _getCurrentUser() async {
     try {
       final userRepository = getIt<IUserRepository>();
       final userResult = await userRepository.getCurrentUser();
@@ -39,32 +45,68 @@ class _SettingsPageState extends State<SettingsPage> {
       userResult.fold(
         (failure) {
           setState(() {
-            _isAdmin = false;
             _isLoading = false;
           });
+          Utility.toast(message: failure.message);
         },
         (user) {
           setState(() {
-            _isAdmin = user.role == AppConstants.admin || user.role == 'ADMIN' || user.role?.toLowerCase() == 'admin';
+            _currentUser = user;
+            _isAdmin = user.role == AppConstants.admin;
+            _isLineHead = user.isLineHead;
+            _isLineMember = user.isLineMember;
             _isLoading = false;
           });
         },
       );
     } catch (e) {
       setState(() {
-        _isAdmin = false;
         _isLoading = false;
       });
-      Utility.toast(message: 'Error checking admin status: $e');
+      Utility.toast(message: 'Error fetching user data: $e');
+    }
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await AuthService().signOut();
+        if (mounted) {
+          context.pushAndRemoveUntil(const LoginPage());
+        }
+      } catch (e) {
+        Utility.toast(message: 'Error logging out: $e');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CommonGradientAppBar(
+      appBar: CommonGradientAppBar(
         title: 'Settings',
-        gradientColors: AppColors.gradientPurpleBlue,
+        gradientColors: _getGradientColors(),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -79,10 +121,26 @@ class _SettingsPageState extends State<SettingsPage> {
                   _buildAdminSection(context),
                   const SizedBox(height: 24),
                 ],
+                if (_isLineHead) ...[
+                  _buildLineHeadSection(context),
+                  const SizedBox(height: 24),
+                ],
+                _buildToolsSection(context),
+                const SizedBox(height: 24),
                 _buildAboutSection(context),
               ],
             ),
     );
+  }
+
+  List<Color> _getGradientColors() {
+    if (_isAdmin) {
+      return AppColors.gradientBlueIndigo;
+    } else if (_isLineHead) {
+      return AppColors.gradientGreenTeal;
+    } else {
+      return AppColors.gradientPurplePink;
+    }
   }
 
   Widget _buildThemeSection(BuildContext context) {
@@ -96,7 +154,8 @@ class _SettingsPageState extends State<SettingsPage> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        CommonCard(
+        RoleThemedCard(
+          userRole: _currentUser?.role,
           child: Column(
             children: [
               ListTile(
@@ -140,7 +199,8 @@ class _SettingsPageState extends State<SettingsPage> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        CommonCard(
+        RoleThemedCard(
+          userRole: _currentUser?.role,
           child: Column(
             children: [
               ListTile(
@@ -149,7 +209,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: const Text('View and edit your profile'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
-                  Utility.toast(message: 'Coming soon!');
+                  if (_currentUser != null) {
+                    context.push(UserProfilePage(user: _currentUser!));
+                  } else {
+                    Utility.toast(message: 'User profile not available');
+                  }
                 },
               ),
               const Divider(),
@@ -190,7 +254,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
           ),
         ),
-        CommonCard(
+        RoleThemedCard(
+          userRole: _currentUser?.role,
           child: Column(
             children: [
               ListTile(
@@ -219,6 +284,90 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Widget _buildLineHeadSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 8),
+          child: Text(
+            'Line Head Tools',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.primaryGreen,
+                ),
+          ),
+        ),
+        RoleThemedCard(
+          userRole: _currentUser?.role,
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.people, color: AppColors.primaryGreen),
+                title: const Text('Line Members'),
+                subtitle: const Text('Manage members in your line'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Utility.toast(message: 'Coming soon!');
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.receipt_long, color: AppColors.primaryTeal),
+                title: const Text('Maintenance Reports'),
+                subtitle: const Text('View detailed maintenance reports'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Utility.toast(message: 'Coming soon!');
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToolsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 8),
+          child: Text(
+            'Tools',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        RoleThemedCard(
+          userRole: _currentUser?.role,
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.screenshot_monitor, color: AppColors.primaryTeal),
+                title: const Text('Take Screenshot'),
+                subtitle: const Text('Capture and share the current screen'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  ScreenshotUtility.takeAndShareScreenshot(context);
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.notifications, color: AppColors.primaryOrange),
+                title: const Text('Notification Settings'),
+                subtitle: const Text('Manage your notification preferences'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Utility.toast(message: 'Coming soon!');
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildAboutSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +379,8 @@ class _SettingsPageState extends State<SettingsPage> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        CommonCard(
+        RoleThemedCard(
+          userRole: _currentUser?.role,
           child: Column(
             children: [
               ListTile(
@@ -257,17 +407,5 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ],
     );
-  }
-
-  Future<void> _logout(BuildContext context) async {
-    try {
-      final authService = AuthService();
-      await authService.signOut();
-      if (context.mounted) {
-        context.pushAndRemoveUntil(const LoginPage());
-      }
-    } catch (e) {
-      Utility.toast(message: 'Error logging out: $e');
-    }
   }
 }

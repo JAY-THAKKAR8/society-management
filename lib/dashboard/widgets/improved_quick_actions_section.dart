@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:society_management/complaints/view/basic_complaints_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/dashboard/widgets/improved_quick_action_button.dart';
-import 'package:society_management/expenses/view/add_expense_page.dart';
+import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/maintenance/view/improved_active_maintenance_stats_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
 import 'package:society_management/users/view/user_information_page.dart';
@@ -94,7 +94,7 @@ class ImprovedQuickActionsSection extends StatelessWidget {
               ? AppColors.gradientGreenTeal[1]
               : AppColors.gradientLightGreen[1],
           onPressed: () {
-            context.push(const AddExpensePage());
+            context.push(const ExpenseDashboardPage());
           },
         ),
 

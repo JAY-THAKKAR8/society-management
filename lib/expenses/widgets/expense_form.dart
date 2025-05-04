@@ -19,6 +19,7 @@ class ExpenseForm extends StatefulWidget {
     required DateTime startDate,
     required DateTime endDate,
     required List<ExpenseItemModel> items,
+    String? description,
   }) onSubmit;
   final bool isLoading;
 
@@ -29,9 +30,10 @@ class ExpenseForm extends StatefulWidget {
 class _ExpenseFormState extends State<ExpenseForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
-  
+
   DateTime? _startDate;
   DateTime? _endDate;
   final List<ExpenseItemModel> _items = [];
@@ -39,6 +41,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
   @override
   void dispose() {
     _nameController.dispose();
+    _descriptionController.dispose();
     _startDateController.dispose();
     _endDateController.dispose();
     super.dispose();
@@ -49,7 +52,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
       context: context,
       initialDate: _startDate,
     );
-    
+
     if (pickedDate != null) {
       setState(() {
         _startDate = pickedDate;
@@ -64,7 +67,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
       initialDate: _endDate ?? _startDate,
       firstDate: _startDate,
     );
-    
+
     if (pickedDate != null) {
       setState(() {
         _endDate = pickedDate;
@@ -81,9 +84,10 @@ class _ExpenseFormState extends State<ExpenseForm> {
         );
         return;
       }
-      
+
       widget.onSubmit(
         name: _nameController.text.trim(),
+        description: _descriptionController.text.trim().isNotEmpty ? _descriptionController.text.trim() : null,
         startDate: _startDate!,
         endDate: _endDate!,
         items: _items,
@@ -108,6 +112,13 @@ class _ExpenseFormState extends State<ExpenseForm> {
               }
               return null;
             },
+          ),
+          const Gap(20),
+          AppTextFormField(
+            controller: _descriptionController,
+            title: 'Description',
+            hintText: 'Enter expense description (optional)',
+            maxLines: 3,
           ),
           const Gap(20),
           Row(
