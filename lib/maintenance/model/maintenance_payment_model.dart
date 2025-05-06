@@ -22,6 +22,9 @@ class MaintenancePaymentModel extends Equatable {
     this.collectorName,
     this.amount,
     this.amountPaid = 0.0,
+    this.lateFeeAmount = 0.0,
+    this.daysLate = 0,
+    this.hasLateFee = false,
     this.paymentDate,
     this.paymentMethod,
     this.status = PaymentStatus.pending,
@@ -59,6 +62,9 @@ class MaintenancePaymentModel extends Equatable {
         collectorName: safeString(json['collector_name']),
         amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
         amountPaid: (json['amount_paid'] as num?)?.toDouble() ?? 0.0,
+        lateFeeAmount: (json['late_fee_amount'] as num?)?.toDouble() ?? 0.0,
+        daysLate: (json['days_late'] as num?)?.toInt() ?? 0,
+        hasLateFee: json['has_late_fee'] as bool? ?? false,
         paymentDate: convertTimestampToString(json['payment_date']),
         paymentMethod: safeString(json['payment_method']),
         status: _statusFromString(safeString(json['status'])),
@@ -76,6 +82,9 @@ class MaintenancePaymentModel extends Equatable {
       return const MaintenancePaymentModel(
         status: PaymentStatus.pending,
         amountPaid: 0.0,
+        lateFeeAmount: 0.0,
+        daysLate: 0,
+        hasLateFee: false,
       );
     }
   }
@@ -120,6 +129,9 @@ class MaintenancePaymentModel extends Equatable {
   final String? collectorName;
   final double? amount;
   final double amountPaid;
+  final double lateFeeAmount;
+  final int daysLate;
+  final bool hasLateFee;
   final String? paymentDate;
   final String? paymentMethod;
   final PaymentStatus status;
@@ -141,6 +153,9 @@ class MaintenancePaymentModel extends Equatable {
     String? collectorName,
     double? amount,
     double? amountPaid,
+    double? lateFeeAmount,
+    int? daysLate,
+    bool? hasLateFee,
     String? paymentDate,
     String? paymentMethod,
     PaymentStatus? status,
@@ -162,6 +177,9 @@ class MaintenancePaymentModel extends Equatable {
       collectorName: collectorName ?? this.collectorName,
       amount: amount ?? this.amount,
       amountPaid: amountPaid ?? this.amountPaid,
+      lateFeeAmount: lateFeeAmount ?? this.lateFeeAmount,
+      daysLate: daysLate ?? this.daysLate,
+      hasLateFee: hasLateFee ?? this.hasLateFee,
       paymentDate: paymentDate ?? this.paymentDate,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       status: status ?? this.status,
@@ -185,6 +203,9 @@ class MaintenancePaymentModel extends Equatable {
         'collector_name': collectorName,
         'amount': amount,
         'amount_paid': amountPaid,
+        'late_fee_amount': lateFeeAmount,
+        'days_late': daysLate,
+        'has_late_fee': hasLateFee,
         'payment_date': paymentDate,
         'payment_method': paymentMethod,
         'status': _statusToString(status),
@@ -208,6 +229,9 @@ class MaintenancePaymentModel extends Equatable {
         collectorName,
         amount,
         amountPaid,
+        lateFeeAmount,
+        daysLate,
+        hasLateFee,
         paymentDate,
         paymentMethod,
         status,

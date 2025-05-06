@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/constants/app_colors.dart';
-import 'package:society_management/dashboard/widgets/improved_quick_actions_section.dart';
-import 'package:society_management/dashboard/widgets/improved_summary_section.dart';
+import 'package:society_management/dashboard/widget/quick_actions_section.dart';
+import 'package:society_management/dashboard/widget/summary_section.dart';
 import 'package:society_management/settings/view/settings_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/screenshot_utility.dart';
@@ -11,18 +11,18 @@ import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_gradient_card.dart';
 import 'package:society_management/widget/kdv_logo.dart';
 
-class ImprovedAdminDashboardWithScreenshot extends StatefulWidget {
-  const ImprovedAdminDashboardWithScreenshot({super.key});
+class AdminDashboard extends StatefulWidget {
+  const AdminDashboard({super.key});
 
   @override
-  State<ImprovedAdminDashboardWithScreenshot> createState() => _ImprovedAdminDashboardWithScreenshotState();
+  State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDashboardWithScreenshot>
+class _AdminDashboardState extends State<AdminDashboard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  final GlobalKey<ImprovedSummarySectionState> _summaryKey = GlobalKey();
+  final GlobalKey<SummarySectionState> _summaryKey = GlobalKey();
 
   @override
   void initState() {
@@ -142,11 +142,11 @@ class _ImprovedAdminDashboardWithScreenshotState extends State<ImprovedAdminDash
                             const SizedBox(height: 24),
 
                             // Summary cards
-                            ImprovedSummarySection(key: _summaryKey),
+                            SummarySection(key: _summaryKey),
                             const SizedBox(height: 32),
 
                             // Quick actions
-                            const ImprovedQuickActionsSection(),
+                            const QuickActionsSection(),
                             const SizedBox(height: 24),
                           ],
                         ),

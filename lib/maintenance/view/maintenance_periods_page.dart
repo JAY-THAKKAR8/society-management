@@ -55,10 +55,13 @@ class _MaintenancePeriodsPageState extends State<MaintenancePeriodsPage> {
         (user) {
           setState(() {
             _currentUser = user;
-            _isAdmin = user.role == 'ADMIN' ||
-                user.role?.toLowerCase() == 'admin' ||
-                user.role == AppConstants.admin ||
-                user.role == AppConstants.admins;
+            // Fix admin role check to be more inclusive
+            _isAdmin = user.role == AppConstants.admin || // 'ADMIN'
+                user.role == AppConstants.admins || // 'Admin'
+                user.role?.toLowerCase() == 'admin';
+
+            // Use Utility.toast for debugging instead of print
+            Utility.toast(message: 'User role: ${user.role}, Is admin: $_isAdmin');
           });
           _fetchMaintenancePeriods();
         },

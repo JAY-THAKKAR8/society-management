@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/users/model/user_model.dart';
@@ -66,7 +67,13 @@ class _AddMaintenancePeriodPageState extends State<AddMaintenancePeriodPage> {
         (user) {
           setState(() {
             _currentUser = user;
-            _isAdmin = user.role == 'ADMIN' || user.role?.toLowerCase() == 'admin';
+            // Fix admin role check to be more inclusive
+            _isAdmin = user.role == AppConstants.admin || // 'ADMIN'
+                user.role == AppConstants.admins || // 'Admin'
+                user.role?.toLowerCase() == 'admin';
+
+            // Debug message
+            Utility.toast(message: 'User role: ${user.role}, Is admin: $_isAdmin');
           });
 
           // If not an admin, redirect back

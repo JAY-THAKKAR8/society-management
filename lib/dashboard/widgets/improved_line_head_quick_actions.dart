@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/maintenance/service/late_fee_calculator.dart';
 import 'package:society_management/maintenance/view/line_member_maintenance_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
@@ -141,6 +142,95 @@ class ImprovedLineHeadQuickActions extends StatelessWidget {
                           );
                         },
                         child: const Text('Member Report'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            _buildQuickActionCard(
+              context,
+              icon: Icons.timer,
+              title: "Calculate Late Fees",
+              description: "Apply daily late fees",
+              gradientColors: isDarkMode
+                  ? [const Color(0xFFE53935), const Color(0xFFFF5252)] // gradientRed
+                  : [const Color(0xFFEF4444), const Color(0xFFF87171)], // lightRed shades
+              onTap: () async {
+                // Show confirmation dialog
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Calculate Late Fees'),
+                    content: const Text(
+                      'This will calculate and apply late fees (₹10 per day) for all overdue payments. Late fees are added to society income.\n\nDo you want to continue?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Get the current context before async operations
+                          final currentContext = context;
+                          Navigator.pop(currentContext);
+
+                          // Show loading dialog
+                          showDialog(
+                            context: currentContext,
+                            barrierDismissible: false,
+                            builder: (dialogContext) => const AlertDialog(
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(height: 16),
+                                  Text('Calculating late fees...'),
+                                ],
+                              ),
+                            ),
+                          );
+
+                          // Call the LateFeeCalculator to calculate late fees
+                          LateFeeCalculator.calculateAndApplyLateFees().then((updatedCount) {
+                            // Check if the widget is still mounted
+                            if (!currentContext.mounted) return;
+
+                            // Close loading dialog
+                            Navigator.of(currentContext).pop();
+
+                            // Show success message
+                            if (currentContext.mounted) {
+                              ScaffoldMessenger.of(currentContext).showSnackBar(
+                                SnackBar(
+                                  content: Text('Late fees applied to $updatedCount payments'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+
+                              // Refresh the dashboard
+                              onActionComplete?.call();
+                            }
+                          }).catchError((e) {
+                            // Check if the widget is still mounted
+                            if (!currentContext.mounted) return;
+
+                            // Close loading dialog
+                            Navigator.of(currentContext).pop();
+
+                            if (!currentContext.mounted) return;
+                            ScaffoldMessenger.of(currentContext).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          });
+                        },
+                        child: const Text('Calculate'),
                       ),
                     ],
                   ),

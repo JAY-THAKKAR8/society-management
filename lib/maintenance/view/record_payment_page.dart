@@ -6,6 +6,7 @@ import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
+import 'package:society_management/maintenance/service/late_fee_calculator.dart';
 import 'package:society_management/maintenance/service/receipt_service.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
@@ -82,6 +83,7 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
   void _initializeData() {
     // Pre-fill with existing data if payment is partially paid
     if (widget.payment.status == PaymentStatus.partiallyPaid || widget.payment.status == PaymentStatus.paid) {
+      // For existing payments, show the amount already paid
       amountController.text = widget.payment.amountPaid.toString();
 
       if (widget.payment.paymentDate != null) {
@@ -94,8 +96,16 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
       checkNumberController.text = widget.payment.checkNumber ?? '';
       transactionIdController.text = widget.payment.transactionId ?? '';
     } else {
-      // For new payments, set the full amount
-      amountController.text = widget.payment.amount?.toString() ?? '0';
+      // For new payments, calculate the total amount including late fees
+      double totalAmount = widget.payment.amount ?? 0.0;
+
+      // If there are late fees, add them to the total amount
+      if (widget.payment.hasLateFee && widget.payment.lateFeeAmount > 0) {
+        totalAmount += widget.payment.lateFeeAmount;
+      }
+
+      // Set the full amount including late fees
+      amountController.text = totalAmount.toString();
 
       // Generate a receipt number for new payments
       _generateReceiptNumber();
@@ -145,9 +155,40 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
             children: [
               _buildUserInfoCard(),
               const Gap(20),
+              // Display maintenance amount and late fee separately
+              if (widget.payment.hasLateFee) ...[
+                // Maintenance amount field (read-only)
+                AppTextFormField(
+                  controller: TextEditingController(text: widget.payment.amount?.toString() ?? '0'),
+                  title: 'Maintenance Amount (₹)',
+                  readOnly: true,
+                  keyboardType: TextInputType.number,
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                const Gap(10),
+                // Late fee amount field (read-only)
+                AppTextFormField(
+                  controller: TextEditingController(text: widget.payment.lateFeeAmount.toString()),
+                  title: 'Late Fee Amount (₹)',
+                  readOnly: true,
+                  keyboardType: TextInputType.number,
+                  textStyle: const TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  suffixIcon: const Tooltip(
+                    message: 'Late fee is calculated at ₹10 per day after the due date',
+                    child: Icon(Icons.info_outline, color: Colors.orange),
+                  ),
+                ),
+                const Gap(10),
+              ],
+              // Total payment amount field
               AppTextFormField(
                 controller: amountController,
-                title: 'Payment Amount (₹)*',
+                title: widget.payment.hasLateFee ? 'Total Payment Amount (₹)*' : 'Payment Amount (₹)*',
                 hintText: 'Enter amount paid',
                 keyboardType: TextInputType.number,
                 inputFormatters: [
@@ -162,8 +203,12 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
                     if (amount <= 0) {
                       return 'Amount must be greater than 0';
                     }
-                    if (widget.payment.amount != null && amount > widget.payment.amount!) {
-                      return 'Amount cannot exceed ${widget.payment.amount}';
+
+                    // Calculate total expected amount including late fees
+                    final totalExpectedAmount = (widget.payment.amount ?? 0) + widget.payment.lateFeeAmount;
+
+                    if (amount > totalExpectedAmount) {
+                      return 'Amount cannot exceed ₹${totalExpectedAmount.toStringAsFixed(2)}';
                     }
                   } catch (e) {
                     return 'Please enter a valid amount';
@@ -360,17 +405,36 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
                 ),
               ],
             ),
-            if (widget.payment.amountPaid > 0) ...[
+            if (widget.payment.amountPaid > 0 || widget.payment.hasLateFee) ...[
               const Divider(),
-              Text(
-                'Already Paid: ₹${widget.payment.amountPaid.toStringAsFixed(2)}',
-                style: const TextStyle(color: Colors.green),
-              ),
-              if (widget.payment.amount != null)
+              if (widget.payment.amountPaid > 0)
                 Text(
-                  'Remaining: ₹${(widget.payment.amount! - widget.payment.amountPaid).toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.red),
+                  'Already Paid: ₹${widget.payment.amountPaid.toStringAsFixed(2)}',
+                  style: const TextStyle(color: Colors.green),
                 ),
+              if (widget.payment.hasLateFee) ...[
+                Text(
+                  'Late Fee: ₹${widget.payment.lateFeeAmount.toStringAsFixed(2)} (${widget.payment.daysLate} days late)',
+                  style: const TextStyle(color: Colors.orange),
+                ),
+              ],
+              if (widget.payment.amount != null) ...[
+                Text(
+                  'Total Due: ₹${(widget.payment.amount! + widget.payment.lateFeeAmount - widget.payment.amountPaid).toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Note: Late fees are added to society income and not to the maintenance collection.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
           ],
         ),
@@ -440,12 +504,36 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
 
       try {
         final maintenanceRepository = getIt<IMaintenanceRepository>();
-        final amountPaid = double.parse(amountController.text.trim());
+        final totalAmountPaid = double.parse(amountController.text.trim());
 
-        // Determine payment status
+        // Calculate how much goes to maintenance and how much to late fees
+        double maintenanceAmountPaid;
+        double lateFeeAmountPaid = 0.0;
+
+        if (widget.payment.hasLateFee) {
+          // If there's a late fee, we need to handle it separately
+          final maintenanceAmount = widget.payment.amount ?? 0.0;
+
+          // First, pay off the maintenance amount
+          maintenanceAmountPaid = totalAmountPaid >= maintenanceAmount ? maintenanceAmount : totalAmountPaid;
+
+          // Then, if there's any remaining amount, apply it to the late fee
+          if (totalAmountPaid > maintenanceAmount) {
+            lateFeeAmountPaid = totalAmountPaid - maintenanceAmount;
+
+            // Cap the late fee payment at the actual late fee amount
+            lateFeeAmountPaid =
+                lateFeeAmountPaid > widget.payment.lateFeeAmount ? widget.payment.lateFeeAmount : lateFeeAmountPaid;
+          }
+        } else {
+          // If there's no late fee, all payment goes to maintenance
+          maintenanceAmountPaid = totalAmountPaid;
+        }
+
+        // Determine payment status based on maintenance amount only
         PaymentStatus status;
         if (widget.payment.amount != null) {
-          if (amountPaid >= widget.payment.amount!) {
+          if (maintenanceAmountPaid >= widget.payment.amount!) {
             status = PaymentStatus.paid;
           } else {
             status = PaymentStatus.partiallyPaid;
@@ -464,6 +552,14 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
           transactionId = transactionIdController.text.trim();
         }
 
+        // Add note about late fee if applicable
+        String notes = notesController.text.trim();
+        if (widget.payment.hasLateFee) {
+          final lateFeePaidText = "Late fee paid: ₹${lateFeeAmountPaid.toStringAsFixed(2)}";
+          notes = notes.isEmpty ? lateFeePaidText : "$notes\n$lateFeePaidText";
+        }
+
+        // Record the payment (only the maintenance portion)
         final result = await maintenanceRepository.recordPayment(
           periodId: widget.periodId,
           userId: widget.payment.userId!,
@@ -473,15 +569,33 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
           collectedBy: currentUserId!,
           collectorName: currentUserName!,
           amount: widget.payment.amount ?? 0,
-          amountPaid: amountPaid,
+          amountPaid: maintenanceAmountPaid,
           paymentDate: paymentDate,
           paymentMethod: selectedPaymentMethod!,
           status: status,
-          notes: notesController.text.trim(),
+          notes: notes,
           receiptNumber: receiptController.text.trim(),
           checkNumber: checkNumber,
           transactionId: transactionId,
         );
+
+        // If there's a late fee payment, record it separately
+        if (widget.payment.hasLateFee && lateFeeAmountPaid > 0) {
+          try {
+            // Use the LateFeeCalculator to record the payment
+            await LateFeeCalculator.recordLateFeePayment(
+              userId: widget.payment.userId!,
+              userName: widget.payment.userName!,
+              amount: lateFeeAmountPaid,
+              paymentDate: paymentDate,
+              paymentMethod: selectedPaymentMethod!,
+              receiptNumber: receiptController.text.trim(),
+            );
+          } catch (e) {
+            debugPrint('Error recording late fee payment: $e');
+            // Continue with the payment process even if late fee recording fails
+          }
+        }
 
         result.fold(
           (failure) {

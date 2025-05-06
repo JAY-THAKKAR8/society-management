@@ -1,36 +1,161 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/dashboard/repository/i_dashboard_stats_repository.dart';
 import 'package:society_management/dashboard/widgets/fixed_gradient_summary_card.dart';
+import 'package:society_management/injector/injector.dart';
+import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
+import 'package:society_management/utility/utility.dart';
 
 class ImprovedLineHeadSummarySection extends StatefulWidget {
   final String? lineNumber;
 
   const ImprovedLineHeadSummarySection({
-    Key? key,
+    super.key,
     this.lineNumber,
-  }) : super(key: key);
+  });
 
   @override
   State<ImprovedLineHeadSummarySection> createState() => ImprovedLineHeadSummarySectionState();
 }
 
 class ImprovedLineHeadSummarySectionState extends State<ImprovedLineHeadSummarySection> {
-  bool _isLoading = false;
-  int _lineMembers = 5;
-  int _pendingPayments = 2;
-  int _fullyPaidUsers = 3;
-  double _collectedAmount = 3000.0;
-  double _pendingAmount = 2000.0;
-  int _activeMaintenancePeriods = 1;
+  bool _isLoading = true;
+  int _lineMembers = 0;
+  int _pendingPayments = 0;
+  int _fullyPaidUsers = 0;
+  double _pendingAmount = 0.0;
+  double _collectedAmount = 0.0;
+  int _activeMaintenancePeriods = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  // Public method to refresh stats from outside
   void refreshStats() {
-    // This is a simplified version that doesn't actually fetch data
-    // In a real implementation, this would fetch data from repositories
-    setState(() {
-      _isLoading = false;
-    });
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    if (widget.lineNumber == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Get line stats using the dashboard stats repository
+      final statsRepository = getIt<IDashboardStatsRepository>();
+      final result = await statsRepository.getLineStats(widget.lineNumber!);
+
+      result.fold(
+        (failure) {
+          Utility.toast(message: failure.message);
+          setState(() {
+            _isLoading = false;
+          });
+        },
+        (stats) {
+          setState(() {
+            _lineMembers = stats.totalMembers;
+            _pendingAmount = stats.maintenancePending;
+            _collectedAmount = stats.maintenanceCollected;
+            _activeMaintenancePeriods = stats.activeMaintenance;
+
+            // Calculate pending and fully paid users
+            if (_lineMembers > 0) {
+              // Get more accurate counts by fetching the latest period's payments
+              final maintenanceRepository = getIt<IMaintenanceRepository>();
+              maintenanceRepository.getActiveMaintenancePeriods().then((periodsResult) {
+                periodsResult.fold(
+                  (failure) {
+                    // Use approximate counts if we can't get detailed data
+                    if (stats.maintenancePending > 0) {
+                      _pendingPayments = _lineMembers;
+                      _fullyPaidUsers = 0;
+                    } else {
+                      _pendingPayments = 0;
+                      _fullyPaidUsers = _lineMembers;
+                    }
+                    setState(() {});
+                  },
+                  (periods) async {
+                    if (periods.isEmpty) {
+                      _pendingPayments = 0;
+                      _fullyPaidUsers = 0;
+                      setState(() {});
+                      return;
+                    }
+
+                    // Get payments for the most recent period
+                    final latestPeriod = periods.first;
+                    if (latestPeriod.id == null) {
+                      setState(() {});
+                      return;
+                    }
+
+                    final paymentsResult = await maintenanceRepository.getPaymentsForLine(
+                      periodId: latestPeriod.id!,
+                      lineNumber: widget.lineNumber!,
+                    );
+
+                    paymentsResult.fold(
+                      (failure) {
+                        // Use approximate counts if we can't get detailed data
+                        if (stats.maintenancePending > 0) {
+                          _pendingPayments = _lineMembers;
+                          _fullyPaidUsers = 0;
+                        } else {
+                          _pendingPayments = 0;
+                          _fullyPaidUsers = _lineMembers;
+                        }
+                        setState(() {});
+                      },
+                      (payments) {
+                        _pendingPayments = 0;
+                        _fullyPaidUsers = 0;
+
+                        for (final payment in payments) {
+                          final amount = payment.amount ?? 0.0;
+                          final amountPaid = payment.amountPaid;
+
+                          if (amountPaid >= amount && amount > 0) {
+                            _fullyPaidUsers++;
+                          } else if (amount > 0) {
+                            _pendingPayments++;
+                          }
+                        }
+
+                        setState(() {});
+                      },
+                    );
+                  },
+                );
+              });
+            } else {
+              _pendingPayments = 0;
+              _fullyPaidUsers = 0;
+            }
+
+            _isLoading = false;
+          });
+        },
+      );
+    } catch (e) {
+      Utility.toast(message: 'Error loading stats: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override

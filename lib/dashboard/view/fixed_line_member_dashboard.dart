@@ -5,7 +5,7 @@ import 'package:society_management/complaints/view/add_complaint_page.dart';
 import 'package:society_management/complaints/view/my_complaints_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
-import 'package:society_management/dashboard/view/improved_line_head_dashboard.dart';
+import 'package:society_management/dashboard/view/fixed_line_head_dashboard.dart';
 import 'package:society_management/dashboard/widgets/improved_line_member_quick_actions.dart';
 import 'package:society_management/dashboard/widgets/improved_line_member_summary_section.dart';
 import 'package:society_management/expenses/view/expense_dashboard_page.dart';
