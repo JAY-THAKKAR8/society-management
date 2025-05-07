@@ -275,6 +275,16 @@ class _LineMemberMaintenancePageState extends State<LineMemberMaintenancePage> {
               'Status',
               'Line members paid: ${_getPaymentStats()}',
             ),
+
+            // Show total late fees for the line
+            if (_getTotalLateFees() > 0) ...[
+              const SizedBox(height: 8),
+              _buildInfoRow(
+                'Total Late Fees',
+                '₹${_getTotalLateFees().toStringAsFixed(2)}',
+                valueColor: Colors.red,
+              ),
+            ],
           ],
         ),
       ),
@@ -288,6 +298,19 @@ class _LineMemberMaintenancePageState extends State<LineMemberMaintenancePage> {
         _payments.where((p) => p.status == PaymentStatus.paid || p.status == PaymentStatus.partiallyPaid).length;
 
     return '$paidCount/${_payments.length}';
+  }
+
+  double _getTotalLateFees() {
+    if (_payments.isEmpty) return 0.0;
+
+    double totalLateFees = 0.0;
+    for (final payment in _payments) {
+      if (payment.hasLateFee && payment.lateFeeAmount > 0) {
+        totalLateFees += payment.lateFeeAmount;
+      }
+    }
+
+    return totalLateFees;
   }
 
   Widget _buildPaymentCard(MaintenancePaymentModel payment) {
@@ -362,6 +385,23 @@ class _LineMemberMaintenancePageState extends State<LineMemberMaintenancePage> {
             _buildInfoRow('Amount', '₹${payment.amount != null ? payment.amount!.toStringAsFixed(2) : '0.00'}'),
             const SizedBox(height: 8),
             _buildInfoRow('Paid', '₹${payment.amountPaid.toStringAsFixed(2)}'),
+
+            // Display late fee if it exists
+            if (payment.hasLateFee && payment.lateFeeAmount > 0) ...[
+              const SizedBox(height: 8),
+              _buildInfoRow(
+                'Late Fee',
+                '₹${payment.lateFeeAmount.toStringAsFixed(2)} (${payment.daysLate} days late)',
+                valueColor: Colors.red,
+              ),
+              const SizedBox(height: 8),
+              _buildInfoRow(
+                'Total Due',
+                '₹${((payment.amount ?? 0) + payment.lateFeeAmount - payment.amountPaid).toStringAsFixed(2)}',
+                valueColor: Colors.red,
+              ),
+            ],
+
             if (payment.paymentDate != null) ...[
               const SizedBox(height: 8),
               _buildInfoRow(
@@ -375,7 +415,7 @@ class _LineMemberMaintenancePageState extends State<LineMemberMaintenancePage> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -393,6 +433,7 @@ class _LineMemberMaintenancePageState extends State<LineMemberMaintenancePage> {
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: valueColor,
                 ),
           ),
         ),
