@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/events/view/events_list_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
+import 'package:society_management/utility/extentions/navigation_extension.dart';
 
 class ImprovedLineMemberQuickActions extends StatelessWidget {
   const ImprovedLineMemberQuickActions({
@@ -91,29 +93,14 @@ class ImprovedLineMemberQuickActions extends StatelessWidget {
             ),
             _buildQuickActionCard(
               context,
-              icon: Icons.help_outline,
-              title: "Help & Support",
-              description: "Get assistance",
+              icon: Icons.event,
+              title: "Society Events",
+              description: "View upcoming events",
               gradientColors: isDarkMode
                   ? [const Color(0xFF039BE5), const Color(0xFF00BCD4)] // gradientBlueAqua
                   : [const Color(0xFF3B82F6), const Color(0xFF60A5FA)], // lightBlue shades
               onTap: () {
-                // Show help dialog
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Help & Support'),
-                    content: const Text(
-                      'For any assistance, please contact your line head or society admin.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('OK'),
-                      ),
-                    ],
-                  ),
-                );
+                context.push(const EventsListPage());
               },
             ),
           ],

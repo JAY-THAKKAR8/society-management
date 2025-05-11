@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/dashboard/widgets/quick_action_button.dart';
+import 'package:society_management/events/view/events_list_page.dart';
+import 'package:society_management/utility/extentions/navigation_extension.dart';
 
 class LineMemberQuickActions extends StatelessWidget {
   const LineMemberQuickActions({
@@ -43,6 +45,13 @@ class LineMemberQuickActions extends StatelessWidget {
               icon: Icons.monetization_on,
               label: "Maintenance Status",
               onPressed: onViewMaintenanceStatus,
+            ),
+            QuickActionButton(
+              icon: Icons.event,
+              label: "Society Events",
+              onPressed: () {
+                context.push(const EventsListPage());
+              },
             ),
           ],
         ),

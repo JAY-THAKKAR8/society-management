@@ -8,7 +8,7 @@ import 'package:society_management/maintenance/view/maintenance_periods_page.dar
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/users/view/user_management_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
-
+  
 class QuickActionsSection extends StatelessWidget {
   const QuickActionsSection({super.key});
 

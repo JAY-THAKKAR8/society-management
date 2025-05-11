@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/complaints/view/basic_complaints_page.dart';
 import 'package:society_management/dashboard/widgets/quick_action_button.dart';
+import 'package:society_management/events/view/events_list_page.dart';
 import 'package:society_management/maintenance/view/improved_active_maintenance_stats_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 
@@ -73,6 +74,13 @@ class QuickActionsSection extends StatelessWidget {
               label: "Manage Complaints",
               onPressed: () {
                 context.push(const BasicComplaintsPage());
+              },
+            ),
+            QuickActionButton(
+              icon: Icons.event,
+              label: "Society Events",
+              onPressed: () {
+                context.push(const EventsListPage());
               },
             ),
           ],
