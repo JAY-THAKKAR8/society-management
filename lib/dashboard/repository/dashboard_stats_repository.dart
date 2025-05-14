@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/model/dashboard_stats_model.dart';
@@ -166,12 +167,13 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
 
     // Update stats for each line
     for (final lineNumber in lineNumbers) {
-      await _updateLineStats(lineNumber);
+      await updateLineStats(lineNumber);
     }
   }
 
-  // Helper method to update stats for a specific line
-  Future<void> _updateLineStats(String lineNumber) async {
+  // Public method to update stats for a specific line
+  @override
+  Future<void> updateLineStats(String lineNumber) async {
     final lineStats = await _calculateLineStats(lineNumber);
     final now = Timestamp.now();
 
@@ -206,7 +208,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
 
         if (lineStatsDoc.exists) {
           // Update stats in the background but return cached stats immediately
-          _updateLineStats(lineNumber); // Don't await this
+          updateLineStats(lineNumber); // Don't await this
           return DashboardStatsModel.fromJson(lineStatsDoc.data() as Map<String, dynamic>);
         }
 
@@ -214,7 +216,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
         final stats = await _calculateLineStats(lineNumber);
 
         // Cache the stats for future use
-        await _updateLineStats(lineNumber);
+        await updateLineStats(lineNumber);
 
         return stats;
       },
@@ -391,8 +393,30 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
   @override
   Future<void> updateDashboardsForMaintenancePeriodCreation() async {
     // Recalculate all stats
-    await getDashboardStats();
+    await updateAdminDashboardStats();
     await _updateAllLineStats();
+  }
+
+  // Method to update admin dashboard stats
+  @override
+  Future<void> updateAdminDashboardStats() async {
+    try {
+      final stats = await _calculateAdminDashboardStats();
+      final now = Timestamp.now();
+
+      // Update the stats document
+      await _adminDashboardCollection.doc('stats').set({
+        'total_members': stats.totalMembers,
+        'total_expenses': stats.totalExpenses,
+        'maintenance_collected': stats.maintenanceCollected,
+        'maintenance_pending': stats.maintenancePending,
+        'active_maintenance': stats.activeMaintenance,
+        'updated_at': now,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      // Log error but don't fail the update
+      debugPrint('Error updating admin dashboard stats: $e');
+    }
   }
 
   // New method to get user dashboard stats
@@ -405,7 +429,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
 
         if (userStatsDoc.exists) {
           // Update stats in the background but return cached stats immediately
-          _updateLineStats(lineNumber); // Don't await this
+          updateLineStats(lineNumber); // Don't await this
           return DashboardStatsModel.fromJson(userStatsDoc.data() as Map<String, dynamic>);
         }
 
@@ -413,7 +437,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
         final stats = await _calculateLineStats(lineNumber);
 
         // Cache the stats for future use
-        await _updateLineStats(lineNumber);
+        await updateLineStats(lineNumber);
 
         return stats;
       },

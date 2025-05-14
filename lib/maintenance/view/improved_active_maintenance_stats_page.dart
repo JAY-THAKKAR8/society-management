@@ -304,82 +304,84 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
         color: ThemeUtils.getHighlightColor(context, Colors.blue, opacity: 0.3),
         width: 1,
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.calendar_month, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.calendar_month, color: Colors.blue),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
                   'Active Maintenance Periods',
+                  maxLines: 2,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: ThemeUtils.getHighlightColor(context, Colors.blue),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${_activePeriods.length} Active',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
+              ),
+              // const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: ThemeUtils.getHighlightColor(context, Colors.blue),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-            ..._activePeriods.map((period) {
-              final dueDate =
-                  period.dueDate != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(period.dueDate!)) : 'N/A';
+                child: Text(
+                  '${_activePeriods.length} Active',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 8),
+          ..._activePeriods.map((period) {
+            final dueDate =
+                period.dueDate != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(period.dueDate!)) : 'N/A';
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        period.name ?? 'Unnamed Period',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      period.name ?? 'Unnamed Period',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
-                    Expanded(
-                      flex: 1,
-                      child: Text(
-                        '₹${period.amount?.toStringAsFixed(0) ?? '0'}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      '₹${period.amount?.toStringAsFixed(0) ?? '0'}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
                     ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Due: $dueDate',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.amber,
-                            ),
-                        textAlign: TextAlign.end,
-                      ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Due: $dueDate',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.amber,
+                          ),
+                      textAlign: TextAlign.end,
                     ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -408,117 +410,115 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
           margin: const EdgeInsets.only(bottom: 16),
           useContainerColor: true,
           borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.people,
-                      color: AppColors.buttonColor,
-                      size: 24,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.people,
+                    color: AppColors.buttonColor,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Line $lineNumber',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: ThemeUtils.getHighlightColor(context, Colors.blue),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Line $lineNumber',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    child: Text(
+                      '${stats.memberCount} Members',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.blue,
                             fontWeight: FontWeight.bold,
                           ),
                     ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: ThemeUtils.getHighlightColor(context, Colors.blue),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${stats.memberCount} Members',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatItem(
-                        context,
-                        'Total Due',
-                        '₹${stats.totalAmount.toStringAsFixed(0)}',
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildStatItem(
-                        context,
-                        'Collected',
-                        '₹${stats.collectedAmount.toStringAsFixed(0)}',
-                        valueColor: Colors.green,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildStatItem(
-                        context,
-                        'Pending',
-                        '₹${stats.pendingAmount.toStringAsFixed(0)}',
-                        valueColor: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                LinearProgressIndicator(
-                  value: collectionPercentage / 100,
-                  backgroundColor:
-                      ThemeUtils.isDarkMode(context) ? Colors.grey.withAlpha(50) : Colors.grey.withAlpha(30),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    collectionPercentage > 75
-                        ? Colors.green
-                        : collectionPercentage > 50
-                            ? Colors.amber
-                            : Colors.red,
                   ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${collectionPercentage.toStringAsFixed(1)}% collected',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    _buildMemberCountChip(
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatItem(
                       context,
-                      'Fully Paid',
-                      stats.paidCount,
-                      Colors.green,
+                      'Total Due',
+                      '₹${stats.totalAmount.toStringAsFixed(0)}',
                     ),
-                    const SizedBox(width: 8),
-                    _buildMemberCountChip(
+                  ),
+                  Expanded(
+                    child: _buildStatItem(
+                      context,
+                      'Collected',
+                      '₹${stats.collectedAmount.toStringAsFixed(0)}',
+                      valueColor: Colors.green,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildStatItem(
                       context,
                       'Pending',
-                      stats.pendingCount,
-                      Colors.red,
+                      '₹${stats.pendingAmount.toStringAsFixed(0)}',
+                      valueColor: Colors.red,
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              LinearProgressIndicator(
+                value: collectionPercentage / 100,
+                backgroundColor: ThemeUtils.isDarkMode(context) ? Colors.grey.withAlpha(50) : Colors.grey.withAlpha(30),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  collectionPercentage > 75
+                      ? Colors.green
+                      : collectionPercentage > 50
+                          ? Colors.amber
+                          : Colors.red,
                 ),
-                const SizedBox(height: 16),
-                TradingStyleButton(
-                  text: 'View Details',
-                  onPressed: () {
-                    // Navigate to line details page
-                    _navigateToLineDetails(lineNumber);
-                  },
-                ),
-              ],
-            ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${collectionPercentage.toStringAsFixed(1)}% collected',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _buildMemberCountChip(
+                    context,
+                    'Fully Paid',
+                    stats.paidCount,
+                    Colors.green,
+                    lineNumber: lineNumber,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildMemberCountChip(
+                    context,
+                    'Pending',
+                    stats.pendingCount,
+                    Colors.red,
+                    lineNumber: lineNumber,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TradingStyleButton(
+                text: 'View Details',
+                onPressed: () {
+                  // Navigate to line details page with no filter (show all)
+                  _navigateToLineDetails(lineNumber, filterType: 'all');
+                },
+              ),
+            ],
           ),
         ),
       );
@@ -535,7 +535,7 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
     return widgets;
   }
 
-  void _navigateToLineDetails(String lineNumber) {
+  void _navigateToLineDetails(String lineNumber, {String? filterType}) {
     // Get users for this line
     final lineUsers = _userStats.values.where((user) => user.lineNumber == lineNumber).toList();
 
@@ -545,6 +545,7 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
         lineNumber: lineNumber,
         users: lineUsers,
         activePeriods: _activePeriods,
+        initialFilterType: filterType,
       ),
     );
   }
@@ -580,32 +581,43 @@ class _ImprovedActiveMaintenanceStatsPageState extends State<ImprovedActiveMaint
     BuildContext context,
     String label,
     int count,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withAlpha(76)),
-      ),
-      child: Row(
-        children: [
-          Text(
-            '$label: ',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
+    Color color, {
+    String? lineNumber,
+  }) {
+    return InkWell(
+      onTap: lineNumber != null
+          ? () {
+              // Navigate to line details with filter
+              final filterType = label == 'Fully Paid' ? 'paid' : 'pending';
+              _navigateToLineDetails(lineNumber, filterType: filterType);
+            }
+          : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withAlpha(25),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withAlpha(76)),
+        ),
+        child: Row(
+          children: [
+            Text(
+              '$label: ',
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(
-            count.toString(),
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
+            Text(
+              count.toString(),
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

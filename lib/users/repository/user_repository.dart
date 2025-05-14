@@ -5,6 +5,7 @@ import 'package:society_management/auth/repository/auth_repository.dart';
 import 'package:society_management/extentions/firestore_extentions.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
+import 'package:society_management/maintenance/service/maintenance_update_service.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/app_typednfs.dart';
@@ -99,6 +100,11 @@ class UserRepository extends IUserRepository {
         final customerCollection = FirebaseFirestore.instance.users;
         final firebaseAuth = FirebaseAuth.instance;
         final currentUser = firebaseAuth.currentUser;
+
+        // Get the user before update to compare changes
+        final userBeforeUpdate = await customerCollection.doc(userId).get();
+        final oldUser = userBeforeUpdate.exists ? UserModel.fromJson(userBeforeUpdate.data()!) : null;
+
         if (currentUser != null && name != null) {
           await currentUser.updateDisplayName(name);
         }
@@ -113,8 +119,15 @@ class UserRepository extends IUserRepository {
           if (isVillaOpen != null) 'is_villa_open': isVillaOpen,
         });
 
-        final updatedUser = await customerCollection.doc(userId).get();
-        return UserModel.fromJson(updatedUser.data()!);
+        final updatedUserDoc = await customerCollection.doc(userId).get();
+        final updatedUser = UserModel.fromJson(updatedUserDoc.data()!);
+
+        // If line number changed, update maintenance payments
+        if (oldUser != null && line != null && oldUser.lineNumber != line) {
+          await MaintenanceUpdateService.handleUserUpdate(oldUser, updatedUser);
+        }
+
+        return updatedUser;
       },
     );
   }

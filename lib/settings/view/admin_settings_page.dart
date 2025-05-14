@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:society_management/maintenance/view/fix_line_inconsistencies_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
@@ -155,6 +156,8 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildMaintenanceTools(),
+            const SizedBox(height: 24),
             _buildDangerZone(),
             if (_successMessage != null) ...[
               const SizedBox(height: 24),
@@ -213,6 +216,43 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   'Warning: This action cannot be undone. All maintenance periods, payments, expenses, and other data will be permanently deleted.',
                   style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
                 ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMaintenanceTools() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 8, top: 24),
+          child: Text(
+            'Maintenance Tools',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.blue,
+                ),
+          ),
+        ),
+        CommonCard(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.build_circle, color: Colors.blue, size: 28),
+                title: const Text(
+                  'Fix Line Inconsistencies',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: const Text(
+                  'Fix issues where user line numbers don\'t match their maintenance payments and other records.',
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  context.push(const FixLineInconsistenciesPage());
+                },
               ),
             ],
           ),

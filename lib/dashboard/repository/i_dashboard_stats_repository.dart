@@ -30,4 +30,10 @@ abstract class IDashboardStatsRepository {
 
   /// Update dashboard stats when a maintenance period is created
   Future<void> updateDashboardsForMaintenancePeriodCreation();
+
+  /// Update stats for a specific line
+  Future<void> updateLineStats(String lineNumber);
+
+  /// Update admin dashboard stats
+  Future<void> updateAdminDashboardStats();
 }

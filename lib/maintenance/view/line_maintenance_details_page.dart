@@ -11,12 +11,14 @@ class LineMaintenanceDetailsPage extends StatefulWidget {
   final String lineNumber;
   final List<UserStatsModel> users;
   final List<MaintenancePeriodModel> activePeriods;
+  final String? initialFilterType; // 'paid', 'pending', or 'all'
 
   const LineMaintenanceDetailsPage({
     super.key,
     required this.lineNumber,
     required this.users,
     required this.activePeriods,
+    this.initialFilterType,
   });
 
   @override
@@ -25,26 +27,54 @@ class LineMaintenanceDetailsPage extends StatefulWidget {
 
 class _LineMaintenanceDetailsPageState extends State<LineMaintenanceDetailsPage> {
   String _searchQuery = '';
+  String _filterType = 'all'; // 'paid', 'pending', or 'all'
   late List<UserStatsModel> _filteredUsers;
 
   @override
   void initState() {
     super.initState();
-    _filteredUsers = widget.users;
+    // Set initial filter type from widget if provided
+    if (widget.initialFilterType != null) {
+      _filterType = widget.initialFilterType!;
+    }
+    _applyFilters();
+  }
+
+  void _applyFilters() {
+    List<UserStatsModel> users = widget.users;
+
+    // Apply payment status filter
+    if (_filterType == 'paid') {
+      users = users.where((user) => user.pendingPeriods.isEmpty).toList();
+    } else if (_filterType == 'pending') {
+      users = users.where((user) => user.pendingPeriods.isNotEmpty).toList();
+    }
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      users = users.where((user) {
+        final nameMatch = user.userName.toLowerCase().contains(_searchQuery.toLowerCase());
+        final villaMatch = user.villaNumber?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
+        return nameMatch || villaMatch;
+      }).toList();
+    }
+
+    setState(() {
+      _filteredUsers = users;
+    });
   }
 
   void _filterUsers(String query) {
     setState(() {
       _searchQuery = query;
-      if (query.isEmpty) {
-        _filteredUsers = widget.users;
-      } else {
-        _filteredUsers = widget.users.where((user) {
-          final nameMatch = user.userName.toLowerCase().contains(query.toLowerCase());
-          final villaMatch = user.villaNumber?.toLowerCase().contains(query.toLowerCase()) ?? false;
-          return nameMatch || villaMatch;
-        }).toList();
-      }
+      _applyFilters();
+    });
+  }
+
+  void _setFilterType(String filterType) {
+    setState(() {
+      _filterType = filterType;
+      _applyFilters();
     });
   }
 
@@ -61,6 +91,7 @@ class _LineMaintenanceDetailsPageState extends State<LineMaintenanceDetailsPage>
       body: Column(
         children: [
           _buildSearchBar(),
+          _buildFilterChips(),
           Expanded(
             child: _filteredUsers.isEmpty
                 ? const Center(
@@ -94,6 +125,53 @@ class _LineMaintenanceDetailsPageState extends State<LineMaintenanceDetailsPage>
           fillColor: AppColors.lightBlack,
         ),
         onChanged: _filterUsers,
+      ),
+    );
+  }
+
+  Widget _buildFilterChips() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          _buildFilterChip('All', 'all'),
+          const SizedBox(width: 8),
+          _buildFilterChip('Fully Paid', 'paid'),
+          const SizedBox(width: 8),
+          _buildFilterChip('Pending', 'pending'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String filterType) {
+    final isSelected = _filterType == filterType;
+    final color = filterType == 'paid'
+        ? Colors.green
+        : filterType == 'pending'
+            ? Colors.red
+            : Colors.blue;
+
+    return InkWell(
+      onTap: () => _setFilterType(filterType),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withAlpha(50) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.withAlpha(100),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? color : Colors.grey,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
       ),
     );
   }
@@ -148,18 +226,25 @@ class _LineMaintenanceDetailsPageState extends State<LineMaintenanceDetailsPage>
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: hasPendingPayments ? Colors.red.withAlpha(25) : Colors.green.withAlpha(25),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      hasPendingPayments ? 'Pending' : 'Fully Paid',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: hasPendingPayments ? Colors.red : Colors.green,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  InkWell(
+                    onTap: () {
+                      // Set filter to match this status
+                      _setFilterType(hasPendingPayments ? 'pending' : 'paid');
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: hasPendingPayments ? Colors.red.withAlpha(25) : Colors.green.withAlpha(25),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        hasPendingPayments ? 'Pending' : 'Fully Paid',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: hasPendingPayments ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
                     ),
                   ),
                 ],
@@ -291,40 +376,4 @@ class _LineMaintenanceDetailsPageState extends State<LineMaintenanceDetailsPage>
       ],
     );
   }
-}
-
-class _UserStats {
-  final String userId;
-  final String userName;
-  final String? villaNumber;
-  final String lineNumber;
-  final double totalAmount;
-  final double totalPaid;
-  final List<_PendingPeriod> pendingPeriods;
-
-  _UserStats({
-    required this.userId,
-    required this.userName,
-    required this.villaNumber,
-    required this.lineNumber,
-    required this.totalAmount,
-    required this.totalPaid,
-    required this.pendingPeriods,
-  });
-}
-
-class _PendingPeriod {
-  final String periodId;
-  final String periodName;
-  final double amount;
-  final double amountPaid;
-  final DateTime? dueDate;
-
-  _PendingPeriod({
-    required this.periodId,
-    required this.periodName,
-    required this.amount,
-    required this.amountPaid,
-    required this.dueDate,
-  });
 }

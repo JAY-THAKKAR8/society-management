@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
@@ -10,6 +12,7 @@ import 'package:society_management/dashboard/widgets/line_head_activity_section.
 import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
+import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/line_head_alert_dialog.dart';
 import 'package:society_management/settings/view/common_settings_page.dart';
@@ -45,7 +48,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
   @override
   void initState() {
     super.initState();
-
+    log('________________________________');
     // Initialize animations
     _animationController = AnimationController(
       vsync: this,
@@ -95,6 +98,18 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
         (periods) async {
           if (periods.isEmpty) return;
 
+          // Sort periods by due date (most recent first)
+          periods.sort((a, b) {
+            if (a.dueDate == null) return 1;
+            if (b.dueDate == null) return -1;
+            return DateTime.parse(b.dueDate!).compareTo(DateTime.parse(a.dueDate!));
+          });
+
+          // Find the most recent period with pending payments
+          MaintenancePeriodModel? periodWithPendingPayments;
+          int pendingCount = 0;
+          double pendingAmount = 0;
+
           // For each active period, check if there are pending payments in this line
           for (final period in periods) {
             if (period.id == null) continue;
@@ -112,36 +127,44 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
               (payments) {
                 // Count pending payments
                 final pendingPayments = payments
-                    .where(
-                        (payment) => payment.status == PaymentStatus.pending || payment.status == PaymentStatus.overdue)
+                    .where((payment) =>
+                        payment.status == PaymentStatus.pending ||
+                        payment.status == PaymentStatus.overdue ||
+                        payment.status == PaymentStatus.partiallyPaid)
                     .toList();
 
                 if (pendingPayments.isNotEmpty) {
                   // Calculate total pending amount
-                  double pendingAmount = 0;
+                  double currentPendingAmount = 0;
                   for (final payment in pendingPayments) {
                     if (payment.amount != null) {
-                      pendingAmount += (payment.amount! - payment.amountPaid);
+                      currentPendingAmount += (payment.amount! - payment.amountPaid);
                     }
                   }
 
-                  // Show alert dialog
-                  if (mounted) {
-                    showDialog(
-                      context: context,
-                      builder: (context) => LineHeadAlertDialog(
-                        period: period,
-                        lineNumber: _currentUser!.lineNumber!,
-                        pendingCount: pendingPayments.length,
-                        pendingAmount: pendingAmount,
-                      ),
-                    );
+                  // If this is the first period with pending payments or it's more recent
+                  if (periodWithPendingPayments == null) {
+                    periodWithPendingPayments = period;
+                    pendingCount = pendingPayments.length;
+                    pendingAmount = currentPendingAmount;
                   }
-
-                  // Only show one alert at a time
-                  return; // Exit the loop after showing one alert
                 }
               },
+            );
+          }
+
+          // Show alert dialog if there are pending payments
+          if (periodWithPendingPayments != null && mounted) {
+            // Always show for line heads, especially for those with "Line head + Member" role
+            showDialog(
+              context: context,
+              barrierDismissible: false, // User must interact with the dialog
+              builder: (context) => LineHeadAlertDialog(
+                period: periodWithPendingPayments!, // Use ! to assert non-null
+                lineNumber: _currentUser!.lineNumber!,
+                pendingCount: pendingCount,
+                pendingAmount: pendingAmount,
+              ),
             );
           }
         },

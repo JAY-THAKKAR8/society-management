@@ -475,6 +475,8 @@ class _LineWiseMaintenanceStatsPageState extends State<LineWiseMaintenanceStatsP
                       'Paid',
                       stats.paidCount,
                       Colors.green,
+                      lineNumber: lineNumber,
+                      filterType: 'paid',
                     ),
                     const SizedBox(width: 8),
                     _buildMemberCountChip(
@@ -482,6 +484,8 @@ class _LineWiseMaintenanceStatsPageState extends State<LineWiseMaintenanceStatsP
                       'Pending',
                       stats.pendingCount,
                       Colors.red,
+                      lineNumber: lineNumber,
+                      filterType: 'pending',
                     ),
                   ],
                 ),
@@ -492,6 +496,7 @@ class _LineWiseMaintenanceStatsPageState extends State<LineWiseMaintenanceStatsP
                       MaintenancePaymentsPage(
                         periodId: widget.periodId,
                         initialLineFilter: lineNumber,
+                        initialStatusFilter: 'all',
                       ),
                     );
                   },
@@ -580,32 +585,49 @@ class _LineWiseMaintenanceStatsPageState extends State<LineWiseMaintenanceStatsP
     BuildContext context,
     String label,
     int count,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withAlpha(75)),
-      ),
-      child: Row(
-        children: [
-          Text(
-            '$label: ',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
+    Color color, {
+    String? lineNumber,
+    String? filterType,
+  }) {
+    return InkWell(
+      onTap: lineNumber != null && filterType != null
+          ? () {
+              // Navigate to payments page with filters
+              context.push(
+                MaintenancePaymentsPage(
+                  periodId: widget.periodId,
+                  initialLineFilter: lineNumber,
+                  initialStatusFilter: filterType,
+                ),
+              );
+            }
+          : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withAlpha(25),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withAlpha(75)),
+        ),
+        child: Row(
+          children: [
+            Text(
+              '$label: ',
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          Text(
-            count.toString(),
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
+            Text(
+              count.toString(),
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

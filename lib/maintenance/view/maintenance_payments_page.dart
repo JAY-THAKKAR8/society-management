@@ -16,11 +16,13 @@ import 'package:society_management/widget/common_app_bar.dart';
 class MaintenancePaymentsPage extends StatefulWidget {
   final String periodId;
   final String? initialLineFilter;
+  final String? initialStatusFilter; // 'paid', 'pending', or 'all'
 
   const MaintenancePaymentsPage({
     super.key,
     required this.periodId,
     this.initialLineFilter,
+    this.initialStatusFilter,
   });
 
   @override
@@ -34,6 +36,7 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
   String? _errorMessage;
   late TabController _tabController;
   String? _selectedLine;
+  String _statusFilter = 'all'; // 'paid', 'pending', or 'all'
   UserModel? _currentUser;
   bool _isAdmin = false;
   bool _isLineHead = false;
@@ -48,6 +51,11 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
       _selectedLine = widget.initialLineFilter;
       // If initial line filter is provided, start on the By Line tab
       _tabController.animateTo(1);
+    }
+
+    // Set initial status filter if provided
+    if (widget.initialStatusFilter != null) {
+      _statusFilter = widget.initialStatusFilter!;
     }
 
     _getCurrentUserAndFetchData();
@@ -165,11 +173,26 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
   }
 
   List<MaintenancePaymentModel> _getFilteredPayments() {
-    if (_selectedLine == null) {
-      return _payments;
+    List<MaintenancePaymentModel> filteredPayments = _payments;
+
+    // Apply line filter if selected
+    if (_selectedLine != null) {
+      filteredPayments = filteredPayments.where((payment) => payment.userLineNumber == _selectedLine).toList();
     }
 
-    return _payments.where((payment) => payment.userLineNumber == _selectedLine).toList();
+    // Apply status filter
+    if (_statusFilter == 'paid') {
+      filteredPayments = filteredPayments.where((payment) => payment.status == PaymentStatus.paid).toList();
+    } else if (_statusFilter == 'pending') {
+      filteredPayments = filteredPayments
+          .where((payment) =>
+              payment.status == PaymentStatus.pending ||
+              payment.status == PaymentStatus.partiallyPaid ||
+              payment.status == PaymentStatus.overdue)
+          .toList();
+    }
+
+    return filteredPayments;
   }
 
   @override
@@ -352,23 +375,98 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
   Widget _buildAllPaymentsList() {
     final filteredPayments = _getFilteredPayments();
 
-    if (filteredPayments.isEmpty) {
-      return const Center(
-        child: Text('No payments found'),
-      );
-    }
+    return Column(
+      children: [
+        _buildStatusFilterChips(),
+        Expanded(
+          child: filteredPayments.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.info_outline, size: 48, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No payments found for the selected filter',
+                        style: TextStyle(color: Colors.grey.shade400),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Try selecting a different filter option',
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredPayments.length,
+                  itemBuilder: (context, index) {
+                    final payment = filteredPayments[index];
+                    return _buildPaymentCard(context, payment);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: filteredPayments.length,
-      itemBuilder: (context, index) {
-        final payment = filteredPayments[index];
-        return _buildPaymentCard(context, payment);
+  Widget _buildStatusFilterChips() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          _buildFilterChip('All', 'all'),
+          const SizedBox(width: 8),
+          _buildFilterChip('Fully Paid', 'paid'),
+          const SizedBox(width: 8),
+          _buildFilterChip('Pending', 'pending'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String filterType) {
+    final isSelected = _statusFilter == filterType;
+    final color = filterType == 'paid'
+        ? Colors.green
+        : filterType == 'pending'
+            ? Colors.red
+            : Colors.blue;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _statusFilter = filterType;
+        });
       },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withAlpha(50) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.withAlpha(100),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? color : Colors.grey,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildLineFilteredList() {
+    final filteredPayments = _getFilteredPayments();
+
     return Column(
       children: [
         Padding(
@@ -412,8 +510,37 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
             },
           ),
         ),
+        _buildStatusFilterChips(),
         Expanded(
-          child: _buildAllPaymentsList(),
+          child: filteredPayments.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.info_outline, size: 48, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No payments found for the selected filters',
+                        style: TextStyle(color: Colors.grey.shade400),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Try selecting different filter options',
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredPayments.length,
+                  itemBuilder: (context, index) {
+                    final payment = filteredPayments[index];
+                    return _buildPaymentCard(context, payment);
+                  },
+                ),
         ),
       ],
     );
@@ -485,18 +612,27 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withAlpha(50),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    statusText,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                InkWell(
+                  onTap: () {
+                    // Set filter to match this status
+                    setState(() {
+                      _statusFilter = payment.status == PaymentStatus.paid ? 'paid' : 'pending';
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withAlpha(50),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
                   ),
                 ),
               ],
