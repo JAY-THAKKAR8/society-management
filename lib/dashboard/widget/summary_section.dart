@@ -144,7 +144,7 @@ class SummarySectionState extends State<SummarySection> with SingleTickerProvide
             );
           },
         ),
-        
+
         // Maintenance Dues Card
         SummaryCard(
           icon: Icons.monetization_on,
@@ -160,7 +160,7 @@ class SummarySectionState extends State<SummarySection> with SingleTickerProvide
             );
           },
         ),
-        
+
         // Total Expenses Card
         SummaryCard(
           icon: Icons.inventory,
@@ -169,7 +169,7 @@ class SummarySectionState extends State<SummarySection> with SingleTickerProvide
           startColor: const Color(0xFF43CEA2),
           endColor: const Color(0xFF185A9D),
         ),
-        
+
         // Collected Payment Card
         SummaryCard(
           icon: Icons.payments,
@@ -185,7 +185,7 @@ class SummarySectionState extends State<SummarySection> with SingleTickerProvide
             );
           },
         ),
-        
+
         // Active Maintenance Card
         SummaryCard(
           icon: Icons.calendar_month,
@@ -201,7 +201,7 @@ class SummarySectionState extends State<SummarySection> with SingleTickerProvide
             );
           },
         ),
-        
+
         // Collection Rate Card
         SummaryCard(
           icon: Icons.pie_chart,
@@ -213,13 +213,13 @@ class SummarySectionState extends State<SummarySection> with SingleTickerProvide
       ],
     );
   }
-  
+
   String _calculateCollectionRate() {
     if (_stats == null) return "0%";
-    
+
     final total = _stats!.maintenanceCollected + _stats!.maintenancePending;
     if (total <= 0) return "0%";
-    
+
     final rate = (_stats!.maintenanceCollected / total) * 100;
     return "${rate.toStringAsFixed(1)}%";
   }

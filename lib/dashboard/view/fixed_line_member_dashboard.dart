@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
+import 'package:society_management/chat/view/chat_page.dart';
+import 'package:society_management/chat/view/society_insights_page.dart';
 import 'package:society_management/complaints/view/add_complaint_page.dart';
 import 'package:society_management/complaints/view/my_complaints_page.dart';
 import 'package:society_management/constants/app_colors.dart';
@@ -180,6 +182,14 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
     final isDarkMode = ThemeUtils.isDarkMode(context);
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.push(const ChatPage());
+        },
+        backgroundColor: AppColors.primaryBlue,
+        tooltip: 'AI Assistant',
+        child: const Icon(Icons.chat, color: Colors.white),
+      ),
       body: RepaintBoundary(
         key: ScreenshotUtility.screenshotKey,
         child: Container(
@@ -254,6 +264,13 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
                                   case 'screenshot':
                                     ScreenshotUtility.takeAndShareScreenshot(context);
                                     break;
+                                  case 'insights':
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const SocietyInsightsPage(),
+                                      ),
+                                    );
+                                    break;
                                   case 'settings':
                                     context.push(const CommonSettingsPage());
                                     break;
@@ -277,6 +294,16 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
                                       Icon(Icons.camera_alt),
                                       SizedBox(width: 12),
                                       Text('Take Screenshot'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'insights',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.insights),
+                                      SizedBox(width: 12),
+                                      Text('Society Insights (AI)'),
                                     ],
                                   ),
                                 ),

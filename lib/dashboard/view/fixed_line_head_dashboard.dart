@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
+import 'package:society_management/chat/view/chat_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/view/fixed_line_member_dashboard.dart';
@@ -260,6 +261,14 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
     final isDarkMode = ThemeUtils.isDarkMode(context);
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.push(const ChatPage());
+        },
+        backgroundColor: AppColors.primaryBlue,
+        tooltip: 'AI Assistant',
+        child: const Icon(Icons.chat, color: Colors.white),
+      ),
       body: RepaintBoundary(
         key: ScreenshotUtility.screenshotKey,
         child: Container(

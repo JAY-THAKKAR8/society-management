@@ -31,29 +31,18 @@ void updateInjector() {
   getIt.registerFactory<EventService>(
     () => EventService(),
   );
-
+  
   // Register the chat repository
   if (!getIt.isRegistered<IChatRepository>()) {
     getIt.registerSingleton<IChatRepository>(
       ChatRepository(),
     );
   }
-
-  // Register the AI service
+  
+  // Register the AI service - using Gemini service
   if (!getIt.isRegistered<AIService>()) {
-    // Set to true to use Gemini, false to use Mock service
-    const bool useGemini = true;
-
-    if (useGemini) {
-      // Use Gemini service (requires API key)
-      getIt.registerSingleton<AIService>(
-        GeminiService(),
-      );
-    } else {
-      // Use Mock service (no API key needed)
-      getIt.registerSingleton<AIService>(
-        MockAIService(),
-      );
-    }
+    getIt.registerSingleton<AIService>(
+      GeminiService(), // Use Gemini instead of MockAIService
+    );
   }
 }

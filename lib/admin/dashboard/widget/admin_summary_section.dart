@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
 import 'package:society_management/admin/dashboard/model/admin_dashboard_notifier.dart';
 import 'package:society_management/dashboard/widgets/improved_summary_card.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
@@ -7,7 +6,7 @@ import 'package:society_management/users/view/line_users_page.dart';
 
 class AdminSummarySection extends StatelessWidget {
   final AdminDashboardNotifier dashboardNotifier;
-  
+
   const AdminSummarySection({
     super.key,
     required this.dashboardNotifier,
@@ -47,7 +46,11 @@ class AdminSummarySection extends StatelessWidget {
         ImprovedSummaryCard(
           icon: Icons.group,
           title: "Total Members",
-          value: state.isLoading ? "Loading..." : state.stats != null ? "${state.stats!.totalMembers}" : "0",
+          value: state.isLoading
+              ? "Loading..."
+              : state.stats != null
+                  ? "${state.stats!.totalMembers}"
+                  : "0",
           startColor: const Color(0xFF4158D0),
           endColor: const Color(0xFFC850C0),
           onTap: () {
@@ -58,15 +61,15 @@ class AdminSummarySection extends StatelessWidget {
             );
           },
         ),
-        
+
         // Maintenance Dues Card
         ImprovedSummaryCard(
           icon: Icons.monetization_on,
           title: "Maintenance Dues",
-          value: state.isLoading 
-              ? "Loading..." 
-              : state.stats != null 
-                  ? "₹${state.stats!.maintenancePending.toStringAsFixed(2)}" 
+          value: state.isLoading
+              ? "Loading..."
+              : state.stats != null
+                  ? "₹${state.stats!.maintenancePending.toStringAsFixed(2)}"
                   : "₹0",
           startColor: const Color(0xFFFF416C),
           endColor: const Color(0xFFFF4B2B),
@@ -78,28 +81,28 @@ class AdminSummarySection extends StatelessWidget {
             );
           },
         ),
-        
+
         // Total Expenses Card
         ImprovedSummaryCard(
           icon: Icons.inventory,
           title: "Total Expenses",
-          value: state.isLoading 
-              ? "Loading..." 
-              : state.stats != null 
-                  ? "₹${state.stats!.totalExpenses.toStringAsFixed(2)}" 
+          value: state.isLoading
+              ? "Loading..."
+              : state.stats != null
+                  ? "₹${state.stats!.totalExpenses.toStringAsFixed(2)}"
                   : "₹0",
           startColor: const Color(0xFF43CEA2),
           endColor: const Color(0xFF185A9D),
         ),
-        
+
         // Collected Payment Card
         ImprovedSummaryCard(
           icon: Icons.payments,
           title: "Collected Payment",
-          value: state.isLoading 
-              ? "Loading..." 
-              : state.stats != null 
-                  ? "₹${state.stats!.maintenanceCollected.toStringAsFixed(2)}" 
+          value: state.isLoading
+              ? "Loading..."
+              : state.stats != null
+                  ? "₹${state.stats!.maintenanceCollected.toStringAsFixed(2)}"
                   : "₹0",
           startColor: const Color(0xFF56CCF2),
           endColor: const Color(0xFF2F80ED),
@@ -111,15 +114,15 @@ class AdminSummarySection extends StatelessWidget {
             );
           },
         ),
-        
+
         // Active Maintenance Card
         ImprovedSummaryCard(
           icon: Icons.calendar_month,
           title: "Active Maintenance",
-          value: state.isLoading 
-              ? "Loading..." 
-              : state.stats != null 
-                  ? "${state.stats!.activeMaintenance}" 
+          value: state.isLoading
+              ? "Loading..."
+              : state.stats != null
+                  ? "${state.stats!.activeMaintenance}"
                   : "0",
           startColor: const Color(0xFF11998E),
           endColor: const Color(0xFF38EF7D),
@@ -131,7 +134,7 @@ class AdminSummarySection extends StatelessWidget {
             );
           },
         ),
-        
+
         // Collection Rate Card
         ImprovedSummaryCard(
           icon: Icons.pie_chart,

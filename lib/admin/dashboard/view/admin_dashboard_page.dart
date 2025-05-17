@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/admin/dashboard/model/admin_dashboard_notifier.dart';
+import 'package:society_management/admin/dashboard/view/admin_wlcome_section_view.dart';
 import 'package:society_management/admin/dashboard/widget/admin_quick_actions_section.dart';
 import 'package:society_management/admin/dashboard/widget/admin_summary_section.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
+import 'package:society_management/chat/view/society_insights_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -82,28 +84,41 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                         secondaryColor: Colors.white,
                       ),
                       const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'KDV Management',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'KDV Management',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Admin Dashboard',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withAlpha(180),
+                            Text(
+                              'Admin Dashboard',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withAlpha(180),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
                   actions: [
+                    IconButton(
+                      icon: const Icon(Icons.insights),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SocietyInsightsPage(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Society Insights (AI)',
+                    ),
                     IconButton(
                       icon: const Icon(Icons.info_outline),
                       onPressed: () {
@@ -127,7 +142,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Welcome message
-                          _buildWelcomeSection(),
+                          const AdminWlcomeSectionView(),
                           const SizedBox(height: 24),
 
                           // Summary cards
@@ -146,66 +161,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4158D0), Color(0xFFC850C0)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFC850C0).withAlpha(40),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Welcome, Admin!',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Manage your society with ease',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withAlpha(200),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(30),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.admin_panel_settings,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-        ],
       ),
     );
   }

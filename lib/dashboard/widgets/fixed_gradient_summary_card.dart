@@ -22,7 +22,7 @@ class GradientSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = ThemeUtils.isDarkMode(context);
-    
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -39,11 +39,11 @@ class GradientSummaryCard extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: gradientColors,
             ),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
-                color: const Color(0x4D000000), // 30% opacity black shadow
+                color: Color(0x4D000000), // 30% opacity black shadow
                 blurRadius: 8,
-                offset: const Offset(0, 4),
+                offset: Offset(0, 4),
               ),
             ],
           ),

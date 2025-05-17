@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
+import 'package:society_management/dashboard/view/line_members_detail_page.dart';
 import 'package:society_management/dashboard/widgets/summary_card.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
-import 'package:society_management/maintenance/view/my_maintenance_status_page.dart';
+import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/utility.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LineMemberSummarySection extends StatefulWidget {
   final String? lineNumber;
@@ -28,6 +31,9 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
   double _collectedAmount = 0.0;
   double _pendingAmount = 0.0;
   int _activeMaintenancePeriods = 0;
+  UserModel? _lineHead;
+  List<UserModel> _lineUsers = [];
+  String _lineDisplayName = '';
 
   @override
   void initState() {
@@ -65,6 +71,36 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
                   user.role != AppConstants.admins)
               .toList();
           _lineMembers = lineUsers.length;
+          _lineUsers = lineUsers;
+
+          // Find line head
+          _lineHead = lineUsers.firstWhere(
+            (user) => user.isLineHead,
+            orElse: () => const UserModel(),
+          );
+
+          // Get line display name
+          if (widget.lineNumber != null) {
+            switch (widget.lineNumber) {
+              case AppConstants.firstLine:
+                _lineDisplayName = 'First Line';
+                break;
+              case AppConstants.secondLine:
+                _lineDisplayName = 'Second Line';
+                break;
+              case AppConstants.thirdLine:
+                _lineDisplayName = 'Third Line';
+                break;
+              case AppConstants.fourthLine:
+                _lineDisplayName = 'Fourth Line';
+                break;
+              case AppConstants.fifthLine:
+                _lineDisplayName = 'Fifth Line';
+                break;
+              default:
+                _lineDisplayName = 'Line';
+            }
+          }
 
           // Get active maintenance periods
           final maintenanceRepository = getIt<IMaintenanceRepository>();
@@ -162,10 +198,83 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Line Summary",
-          style: Theme.of(context).textTheme.titleLarge,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Line Summary",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            if (widget.lineNumber != null)
+              TextButton.icon(
+                icon: const Icon(Icons.people),
+                label: const Text('View All Members'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => LineMembersDetailPage(
+                        lineNumber: widget.lineNumber!,
+                        lineDisplayName: _lineDisplayName,
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
         ),
+
+        // Line head info
+        if (_lineHead != null && _lineHead?.name != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Card(
+              color: AppColors.lightBlack,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      backgroundColor: Colors.amber,
+                      child: Icon(Icons.person, color: Colors.white),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Line Head',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            _lineHead?.name ?? 'Unknown',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_lineHead?.mobileNumber != null)
+                      IconButton(
+                        icon: const Icon(Icons.call, color: Colors.green),
+                        onPressed: () {
+                          _makePhoneCall(_lineHead!.mobileNumber!);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
         const SizedBox(height: 12),
         Row(
           children: [
@@ -188,7 +297,10 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
                   if (widget.lineNumber != null) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const MyMaintenanceStatusPage(),
+                        builder: (context) => LineMembersDetailPage(
+                          lineNumber: widget.lineNumber!,
+                          lineDisplayName: _lineDisplayName,
+                        ),
                       ),
                     );
                   }
@@ -210,7 +322,10 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
                   if (widget.lineNumber != null) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const MyMaintenanceStatusPage(),
+                        builder: (context) => LineMembersDetailPage(
+                          lineNumber: widget.lineNumber!,
+                          lineDisplayName: _lineDisplayName,
+                        ),
                       ),
                     );
                   }
@@ -250,7 +365,10 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
                   if (widget.lineNumber != null) {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const MyMaintenanceStatusPage(),
+                        builder: (context) => LineMembersDetailPage(
+                          lineNumber: widget.lineNumber!,
+                          lineDisplayName: _lineDisplayName,
+                        ),
                       ),
                     );
                   }
@@ -261,5 +379,21 @@ class _LineMemberSummarySectionState extends State<LineMemberSummarySection> {
         ),
       ],
     );
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        Utility.toast(message: 'Could not launch phone call');
+      }
+    } catch (e) {
+      Utility.toast(message: 'Could not launch phone call: $e');
+    }
   }
 }

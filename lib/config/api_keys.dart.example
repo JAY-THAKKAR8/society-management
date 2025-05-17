@@ -1,0 +1,11 @@
+/// This is an example file for api_keys.dart.
+/// Copy this file to api_keys.dart and replace the placeholder values with your actual API keys.
+/// The api_keys.dart file should not be committed to version control.
+
+class ApiKeys {
+  /// Google Gemini API key
+  static const String geminiApiKey = 'your_gemini_api_key_here';
+  
+  /// OpenAI API key (if needed)
+  static const String openAIApiKey = 'your_openai_api_key_here';
+}

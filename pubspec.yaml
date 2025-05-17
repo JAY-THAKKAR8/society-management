@@ -48,6 +48,13 @@ dependencies:
   flutter_bloc: ^9.1.0
   url_launcher: ^6.2.5
   fl_chart: ^0.66.2
+  http: ^1.2.1
+  flutter_chat_ui: ^1.6.12
+  flutter_chat_types: ^3.6.2
+  timeago: ^3.6.1
+  flutter_dotenv: ^5.1.0
+  speech_to_text: ^6.6.0
+  flutter_tts: ^3.8.5
 
 dev_dependencies:
   injectable_generator: 2.6.2

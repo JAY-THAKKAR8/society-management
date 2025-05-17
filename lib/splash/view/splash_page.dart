@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
+import 'package:society_management/chat/test/gemini_api_test_fixed.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/dashboard/view/admin_dashboard.dart';
@@ -93,75 +94,104 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.primary.withBlue(60),
-              AppColors.primary.withBlue(100),
-            ],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Custom KDV Logo with glow effect
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withAlpha(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.buttonColor.withAlpha(75),
-                      blurRadius: 20,
-                      spreadRadius: 5,
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primary,
+                  AppColors.primary.withBlue(60),
+                  AppColors.primary.withBlue(100),
+                ],
+              ),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Custom KDV Logo with glow effect
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withAlpha(25),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.buttonColor.withAlpha(75),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: const KDVLogo(
-                  size: 120,
-                  primaryColor: AppColors.buttonColor,
-                  secondaryColor: Colors.white,
-                ),
+                    child: const KDVLogo(
+                      size: 120,
+                      primaryColor: AppColors.buttonColor,
+                      secondaryColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  // App name
+                  const Text(
+                    'KDV Management',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // App subtitle
+                  Text(
+                    'Society Management System',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white.withAlpha(180),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  // Loading indicator
+                  const SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.buttonColor),
+                      strokeWidth: 3,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 30),
-              // App name
-              const Text(
-                'KDV Management',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 10),
-              // App subtitle
-              Text(
-                'Society Management System',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white.withAlpha(180),
-                ),
-              ),
-              const SizedBox(height: 40),
-              // Loading indicator
-              const SizedBox(
-                width: 40,
-                height: 40,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.buttonColor),
-                  strokeWidth: 3,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          
+          // Add a hidden button for development to test Gemini API
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: GestureDetector(
+              onLongPress: () {
+                // Only navigate on long press to avoid accidental taps
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const GeminiApiTestPage(),
+                  ),
+                );
+              },
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
