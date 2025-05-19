@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:society_management/admin/dashboard/view/admin_dashboard_page.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/chat/test/gemini_api_test_fixed.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
-import 'package:society_management/dashboard/view/admin_dashboard.dart';
-import 'package:society_management/dashboard/view/fixed_line_head_dashboard.dart';
-import 'package:society_management/dashboard/view/fixed_line_member_dashboard.dart';
+import 'package:society_management/line_head/dashboard/view/fixed_line_head_dashboard.dart';
+import 'package:society_management/line_member/dashboard/view/fixed_line_member_dashboard.dart';
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -66,7 +66,7 @@ class _SplashPageState extends State<SplashPage> {
               // User can choose different dashboard on next login
               context.pushAndRemoveUntil(const ImprovedLineHeadDashboard());
             } else {
-              context.pushAndRemoveUntil(const AdminDashboard());
+              context.pushAndRemoveUntil(const AdminDashboardPage());
             }
           }
         } else {
@@ -167,7 +167,7 @@ class _SplashPageState extends State<SplashPage> {
               ),
             ),
           ),
-          
+
           // Add a hidden button for development to test Gemini API
           Positioned(
             bottom: 20,

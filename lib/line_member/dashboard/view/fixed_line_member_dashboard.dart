@@ -1,46 +1,40 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/chat/view/chat_page.dart';
+import 'package:society_management/chat/view/society_insights_page.dart';
+import 'package:society_management/complaints/view/add_complaint_page.dart';
+import 'package:society_management/complaints/view/my_complaints_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
-import 'package:society_management/dashboard/view/fixed_line_member_dashboard.dart';
-import 'package:society_management/dashboard/widgets/improved_line_head_quick_actions.dart';
-import 'package:society_management/dashboard/widgets/improved_line_head_summary_section.dart';
-import 'package:society_management/dashboard/widgets/line_head_activity_section.dart';
+import 'package:society_management/line_member/dashboard/view/improved_line_member_quick_actions.dart';
+import 'package:society_management/line_member/dashboard/view/improved_line_member_summary_section.dart';
 import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/injector/injector.dart';
-import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
-import 'package:society_management/maintenance/model/maintenance_period_model.dart';
-import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
-import 'package:society_management/maintenance/view/line_head_alert_dialog.dart';
+import 'package:society_management/line_head/dashboard/view/fixed_line_head_dashboard.dart';
+import 'package:society_management/maintenance/view/my_maintenance_status_page.dart';
 import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/users/model/user_model.dart';
-import 'package:society_management/users/view/user_information_page.dart';
+import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/screenshot_utility.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_gradient_card.dart';
 import 'package:society_management/widget/kdv_logo.dart';
 
-class ImprovedLineHeadDashboard extends StatefulWidget {
-  const ImprovedLineHeadDashboard({super.key});
+class ImprovedLineMemberDashboard extends StatefulWidget {
+  const ImprovedLineMemberDashboard({super.key});
 
   @override
-  State<ImprovedLineHeadDashboard> createState() => _ImprovedLineHeadDashboardState();
+  State<ImprovedLineMemberDashboard> createState() => _ImprovedLineMemberDashboardState();
 }
 
-class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> with SingleTickerProviderStateMixin {
-  // Keys to force refresh the dashboard widgets
-  final GlobalKey<ImprovedLineHeadSummarySectionState> _summaryKey = GlobalKey<ImprovedLineHeadSummarySectionState>();
-  final GlobalKey<LineHeadActivitySectionState> _activityKey = GlobalKey<LineHeadActivitySectionState>();
-
+class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboard> with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
   UserModel? _currentUser;
   bool _isLoading = true;
+  List<UserModel> _lineMembers = [];
 
   // Animation controllers
   late AnimationController _animationController;
@@ -49,7 +43,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
   @override
   void initState() {
     super.initState();
-    log('________________________________');
+
     // Initialize animations
     _animationController = AnimationController(
       vsync: this,
@@ -72,116 +66,13 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
     super.dispose();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Check for pending maintenance after the widget is fully built
-    if (_currentUser != null && _currentUser?.lineNumber != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _checkPendingMaintenance();
-      });
-    }
-  }
-
-  Future<void> _checkPendingMaintenance() async {
-    try {
-      if (_currentUser?.lineNumber == null) return;
-
-      // Get active maintenance periods
-      final maintenanceRepository = getIt<IMaintenanceRepository>();
-      final periodsResult = await maintenanceRepository.getActiveMaintenancePeriods();
-
-      periodsResult.fold(
-        (failure) {
-          // Silently fail, we don't want to disrupt the dashboard
-          debugPrint('Error checking maintenance periods: ${failure.message}');
-        },
-        (periods) async {
-          if (periods.isEmpty) return;
-
-          // Sort periods by due date (most recent first)
-          periods.sort((a, b) {
-            if (a.dueDate == null) return 1;
-            if (b.dueDate == null) return -1;
-            return DateTime.parse(b.dueDate!).compareTo(DateTime.parse(a.dueDate!));
-          });
-
-          // Find the most recent period with pending payments
-          MaintenancePeriodModel? periodWithPendingPayments;
-          int pendingCount = 0;
-          double pendingAmount = 0;
-
-          // For each active period, check if there are pending payments in this line
-          for (final period in periods) {
-            if (period.id == null) continue;
-
-            final paymentsResult = await maintenanceRepository.getPaymentsForLine(
-              periodId: period.id!,
-              lineNumber: _currentUser!.lineNumber!,
-            );
-
-            paymentsResult.fold(
-              (failure) {
-                // Silently fail
-                debugPrint('Error checking payments: ${failure.message}');
-              },
-              (payments) {
-                // Count pending payments
-                final pendingPayments = payments
-                    .where((payment) =>
-                        payment.status == PaymentStatus.pending ||
-                        payment.status == PaymentStatus.overdue ||
-                        payment.status == PaymentStatus.partiallyPaid)
-                    .toList();
-
-                if (pendingPayments.isNotEmpty) {
-                  // Calculate total pending amount
-                  double currentPendingAmount = 0;
-                  for (final payment in pendingPayments) {
-                    if (payment.amount != null) {
-                      currentPendingAmount += (payment.amount! - payment.amountPaid);
-                    }
-                  }
-
-                  // If this is the first period with pending payments or it's more recent
-                  if (periodWithPendingPayments == null) {
-                    periodWithPendingPayments = period;
-                    pendingCount = pendingPayments.length;
-                    pendingAmount = currentPendingAmount;
-                  }
-                }
-              },
-            );
-          }
-
-          // Show alert dialog if there are pending payments
-          if (periodWithPendingPayments != null && mounted) {
-            // Always show for line heads, especially for those with "Line head + Member" role
-            showDialog(
-              context: context,
-              barrierDismissible: false, // User must interact with the dialog
-              builder: (context) => LineHeadAlertDialog(
-                period: periodWithPendingPayments!, // Use ! to assert non-null
-                lineNumber: _currentUser!.lineNumber!,
-                pendingCount: pendingCount,
-                pendingAmount: pendingAmount,
-              ),
-            );
-          }
-        },
-      );
-    } catch (e) {
-      debugPrint('Error in _checkPendingMaintenance: $e');
-    }
-  }
-
   Future<void> _getCurrentUser() async {
     try {
       final user = await _authService.getCurrentUser();
       if (user != null) {
-        // Verify this is a line head or line head + member
-        if (!user.isLineHead) {
-          Utility.toast(message: 'Access denied: Not a line head');
+        // Verify this is a line member or line head + member
+        if (!user.isLineMember) {
+          Utility.toast(message: 'Access denied: Not a line member');
           await _logout();
           return;
         }
@@ -193,6 +84,11 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
 
         // Start animations
         _animationController.forward();
+
+        // Fetch line members after getting current user
+        if (user.lineNumber != null) {
+          _fetchLineMembers(user.lineNumber!);
+        }
       } else {
         setState(() {
           _isLoading = false;
@@ -220,16 +116,40 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
     }
   }
 
-  // Switch to member view for LINE_HEAD_MEMBER users
-  void _switchToMemberView() {
+  Future<void> _fetchLineMembers(String lineNumber) async {
+    try {
+      final userRepository = getIt<IUserRepository>();
+      final result = await userRepository.getAllUsers();
+
+      result.fold(
+        (failure) {
+          Utility.toast(message: failure.message);
+        },
+        (users) {
+          // Filter users by line number
+          final filteredUsers =
+              users.where((user) => user.lineNumber == lineNumber && user.id != _currentUser?.id).toList();
+
+          setState(() {
+            _lineMembers = filteredUsers;
+          });
+        },
+      );
+    } catch (e) {
+      Utility.toast(message: 'Error fetching line members: $e');
+    }
+  }
+
+  // Switch to line head view for LINE_HEAD_MEMBER users
+  void _switchToLineHeadView() {
     if (_currentUser?.role == AppConstants.lineHeadAndMember) {
       // Show a confirmation dialog
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Switch to Member View'),
+          title: const Text('Switch to Line Head View'),
           content: const Text(
-              'You are about to switch to your member dashboard where you can view your personal maintenance status and other member-specific features.'),
+              'You are about to switch to your line head dashboard where you can manage maintenance collections and other line head responsibilities.'),
           actions: [
             TextButton(
               onPressed: () {
@@ -240,8 +160,8 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close dialog
-                // Navigate to member dashboard
-                context.pushAndRemoveUntil(const ImprovedLineMemberDashboard());
+                // Navigate to line head dashboard
+                context.pushAndRemoveUntil(const ImprovedLineHeadDashboard());
               },
               child: const Text('Switch'),
             ),
@@ -252,8 +172,9 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
   }
 
   Future<void> _refreshDashboard() async {
-    _summaryKey.currentState?.refreshStats();
-    _activityKey.currentState?.refreshActivities();
+    if (_currentUser?.lineNumber != null) {
+      _fetchLineMembers(_currentUser!.lineNumber!);
+    }
   }
 
   @override
@@ -278,7 +199,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
               end: Alignment.bottomCenter,
               colors: isDarkMode
                   ? [AppColors.darkBackground, const Color(0xFF121428)] // Dark background with blue tint
-                  : AppColors.gradientGreenTeal,
+                  : AppColors.gradientPurplePink,
             ),
           ),
           child: SafeArea(
@@ -297,7 +218,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                             children: [
                               KDVLogo(
                                 size: 40,
-                                primaryColor: AppColors.primaryGreen,
+                                primaryColor: AppColors.primaryPurple,
                                 secondaryColor: Colors.white,
                               ),
                               SizedBox(width: 12),
@@ -313,7 +234,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                                     ),
                                   ),
                                   Text(
-                                    'Line Head Dashboard',
+                                    'Member Dashboard',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Color(0xB3FFFFFF), // 70% opacity of white
@@ -324,12 +245,12 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                             ],
                           ),
                           actions: [
-                            // Show switch to member view button only for LINE_HEAD_MEMBER users
+                            // Show switch to line head view button only for LINE_HEAD_MEMBER users
                             if (_currentUser?.role == AppConstants.lineHeadAndMember)
                               IconButton(
                                 icon: const Icon(Icons.switch_account, color: Colors.white),
-                                onPressed: _switchToMemberView,
-                                tooltip: 'Switch to Member View',
+                                onPressed: _switchToLineHeadView,
+                                tooltip: 'Switch to Line Head View',
                               ),
                             // More menu with additional options
                             PopupMenuButton<String>(
@@ -343,11 +264,15 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                                   case 'screenshot':
                                     ScreenshotUtility.takeAndShareScreenshot(context);
                                     break;
+                                  case 'insights':
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const SocietyInsightsPage(),
+                                      ),
+                                    );
+                                    break;
                                   case 'settings':
                                     context.push(const CommonSettingsPage());
-                                    break;
-                                  case 'info':
-                                    context.push(UserInformationPage(user: _currentUser));
                                     break;
                                 }
                               },
@@ -373,22 +298,22 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                                   ),
                                 ),
                                 const PopupMenuItem<String>(
+                                  value: 'insights',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.insights),
+                                      SizedBox(width: 12),
+                                      Text('Society Insights (AI)'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem<String>(
                                   value: 'settings',
                                   child: Row(
                                     children: [
                                       Icon(Icons.settings),
                                       SizedBox(width: 12),
                                       Text('Settings'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem<String>(
-                                  value: 'info',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.info_outline),
-                                      SizedBox(width: 12),
-                                      Text('Society Information'),
                                     ],
                                   ),
                                 ),
@@ -411,28 +336,31 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                                   const SizedBox(height: 24),
 
                                   // Summary cards
-                                  ImprovedLineHeadSummarySection(
-                                    key: _summaryKey,
+                                  ImprovedLineMemberSummarySection(
                                     lineNumber: _currentUser?.lineNumber,
                                   ),
                                   const SizedBox(height: 32),
 
                                   // Quick actions
-                                  ImprovedLineHeadQuickActions(
-                                    lineNumber: _currentUser?.lineNumber,
-                                    onActionComplete: () {
-                                      // Refresh both dashboard sections
-                                      _summaryKey.currentState?.refreshStats();
-                                      _activityKey.currentState?.refreshActivities();
+                                  ImprovedLineMemberQuickActions(
+                                    onAddComplaint: () {
+                                      context.push(const AddComplaintPage());
+                                    },
+                                    onViewComplaints: () {
+                                      context.push(const MyComplaintsPage());
+                                    },
+                                    onViewMaintenanceStatus: () {
+                                      context.push(const MyMaintenanceStatusPage());
                                     },
                                   ),
                                   const SizedBox(height: 24),
 
-                                  // Activity section
-                                  LineHeadActivitySection(
-                                    key: _activityKey,
-                                    lineNumber: _currentUser?.lineNumber,
-                                  ),
+                                  // Line member specific content
+                                  _buildLineInfo(),
+                                  const SizedBox(height: 24),
+
+                                  // Line members list
+                                  _buildLineMembersList(),
                                   const SizedBox(height: 100), // Extra space at bottom
                                 ],
                               ),
@@ -452,7 +380,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
     final isDarkMode = ThemeUtils.isDarkMode(context);
 
     return CommonGradientCard(
-      gradientColors: isDarkMode ? AppColors.gradientGreenTeal : AppColors.gradientLightGreen,
+      gradientColors: isDarkMode ? AppColors.gradientPurplePink : AppColors.gradientLightPurple,
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
@@ -461,7 +389,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome, ${_currentUser?.name ?? 'Line Head'}!',
+                  'Welcome, ${_currentUser?.name ?? 'Member'}!',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
@@ -471,7 +399,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Manage your line with ease',
+                  'Stay updated with your society',
                   style: TextStyle(
                     fontSize: 14,
                     letterSpacing: 0.25,
@@ -488,11 +416,216 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.supervisor_account,
+              Icons.person,
               color: Colors.white,
               size: 32,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLineInfo() {
+    final isDarkMode = ThemeUtils.isDarkMode(context);
+
+    return CommonGradientCard(
+      gradientColors: isDarkMode
+          ? [const Color(0xB36A11CB), const Color(0xB3C850C0)] // 70% opacity of primaryPurple and primaryPink
+          : AppColors.gradientLightPurple,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Your Line Information",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildInfoRow("Line", _currentUser?.userLineViewString ?? "Not assigned"),
+          _buildInfoRow("Role", _currentUser?.userRoleViewString ?? "Line member"),
+          if (_currentUser?.villNumber != null)
+            _buildInfoRow("Villa Number", _currentUser?.villNumber ?? "Not assigned"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Text(
+            "$label: ",
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.white70,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLineMembersList() {
+    if (_lineMembers.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: ThemeUtils.getCardColor(context),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0D000000), // 5% opacity of black
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Line Members",
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                "No other members in your line",
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: ThemeUtils.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000), // 5% opacity of black
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Line Members",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              Text(
+                "${_lineMembers.length} members",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: ThemeUtils.getTextColor(context, secondary: true),
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ..._lineMembers.map((member) => _buildMemberItem(member)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMemberItem(UserModel member) {
+    final bool isLineHead = member.isLineHead;
+    final isDarkMode = ThemeUtils.isDarkMode(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isLineHead
+                  ? isDarkMode
+                      ? const Color(0x3311998E) // 20% opacity of primaryGreen
+                      : const Color(0x1A11998E) // 10% opacity of primaryGreen
+                  : isDarkMode
+                      ? const Color(0x336A11CB) // 20% opacity of primaryPurple
+                      : const Color(0x1A6A11CB), // 10% opacity of primaryPurple
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                member.name?.isNotEmpty == true ? member.name!.substring(0, 1).toUpperCase() : '?',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isLineHead ? AppColors.primaryGreen : AppColors.primaryPurple,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  member.name ?? 'Unknown',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isLineHead ? AppColors.primaryGreen : null,
+                      ),
+                ),
+                if (member.villNumber != null)
+                  Text(
+                    'Villa: ${member.villNumber}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: ThemeUtils.getTextColor(context, secondary: true),
+                        ),
+                  ),
+              ],
+            ),
+          ),
+          if (isLineHead)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? const Color(0x3311998E) // 20% opacity of primaryGreen
+                    : const Color(0x1A11998E), // 10% opacity of primaryGreen
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Line Head',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.primaryGreen,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
         ],
       ),
     );

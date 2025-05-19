@@ -5,8 +5,8 @@ import 'package:society_management/admin/dashboard/view/admin_dashboard_page.dar
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
-import 'package:society_management/dashboard/view/fixed_line_head_dashboard.dart';
-import 'package:society_management/dashboard/view/fixed_line_member_dashboard.dart';
+import 'package:society_management/line_member/dashboard/view/fixed_line_member_dashboard.dart';
+import 'package:society_management/line_head/dashboard/view/fixed_line_head_dashboard.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
