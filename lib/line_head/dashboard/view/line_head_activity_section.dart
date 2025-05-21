@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:society_management/dashboard/model/activity_model.dart';
-import 'package:society_management/dashboard/widgets/recent_activity_item.dart';
 import 'package:society_management/extentions/firestore_extentions.dart';
+import 'package:society_management/line_head/dashboard/view/recent_activity_item.dart';
 
 class LineHeadActivitySection extends StatefulWidget {
   final String? lineNumber;

@@ -6,7 +6,7 @@ import 'package:society_management/maintenance/view/maintenance_periods_page.dar
 
 class LineHeadSummarySection extends StatelessWidget {
   final LineHeadDashboardNotifier dashboardNotifier;
-  
+
   const LineHeadSummarySection({
     super.key,
     required this.dashboardNotifier,
