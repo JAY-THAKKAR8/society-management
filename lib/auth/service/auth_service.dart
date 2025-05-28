@@ -1,7 +1,9 @@
+import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:society_management/auth/repository/auth_repository.dart';
 import 'package:society_management/users/model/user_model.dart';
 
+@injectable
 class AuthService {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _userEmailKey = 'user_email';

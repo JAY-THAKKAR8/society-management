@@ -191,7 +191,16 @@ Based on this data, please answer my question: $prompt
       'late',
       'fee',
       'penalty',
-      'charge'
+      'charge',
+      'reminder',
+      'alert',
+      'analytics',
+      'analysis',
+      'report',
+      'dashboard',
+      'defaulter',
+      'trends',
+      'health'
     ];
 
     // Check if any of the keywords are in the prompt

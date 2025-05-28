@@ -5,6 +5,7 @@ import 'package:society_management/admin/dashboard/widget/admin_quick_actions_se
 import 'package:society_management/admin/dashboard/widget/admin_summary_section.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
+import 'package:society_management/chat/view/chat_page.dart';
 import 'package:society_management/chat/view/society_insights_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/settings/view/common_settings_page.dart';
@@ -56,6 +57,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.push(const ChatPage());
+        },
+        backgroundColor: AppColors.buttonColor,
+        tooltip: 'AI Assistant',
+        child: const Icon(Icons.smart_toy, color: Colors.white),
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

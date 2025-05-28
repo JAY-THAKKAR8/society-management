@@ -5,6 +5,7 @@ import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/chat/model/chat_message_model.dart';
 import 'package:society_management/chat/repository/chat_repository.dart';
 import 'package:society_management/chat/service/ai_service.dart';
+import 'package:society_management/chat/service/enhanced_ai_service.dart';
 import 'package:society_management/chat/service/gemini_service.dart';
 import 'package:society_management/chat/service/voice_chat_service.dart';
 import 'package:society_management/chat/view/voice_input_page.dart';
@@ -23,7 +24,8 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final IChatRepository _chatRepository = getIt<IChatRepository>();
   final AIService _aiService = getIt<AIService>();
-  final AuthService _authService = AuthService();
+  final EnhancedAIService _enhancedAIService = EnhancedAIService();
+  final AuthService _authService = getIt<AuthService>();
   final VoiceChatService _voiceChatService = VoiceChatService();
   final List<types.Message> _messages = [];
   final _uuid = const Uuid();
@@ -205,8 +207,8 @@ class _ChatPageState extends State<ChatPage> {
             );
           });
 
-          // Get AI response
-          final aiResponse = await _aiService.generateResponse(message.text);
+          // Get AI response using enhanced AI service
+          final aiResponse = await _enhancedAIService.processQuery(message.text);
 
           // Remove typing indicator
           setState(() {
@@ -599,40 +601,150 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _buildSuggestionChips(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final suggestions = [
-      'How do I pay maintenance?',
-      'How to submit a complaint?',
-      'Show upcoming events',
-      'What can you help with?',
-      'What is my pending amount?',
-      'Show my user information',
-      'What are the society statistics?',
-      'When is my maintenance due?',
-    ];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
-      children: suggestions.map((suggestion) {
-        return ActionChip(
-          label: Text(suggestion),
-          backgroundColor: isDarkMode ? AppColors.darkCard : AppColors.lightContainerHighlight,
-          labelStyle: TextStyle(
-            color: isDarkMode ? Colors.white : AppColors.lightText,
-          ),
-          side: BorderSide(
-            color: isDarkMode ? Colors.transparent : AppColors.primaryBlue.withAlpha(51),
-          ),
-          elevation: 0,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          onPressed: () {
-            final message = types.PartialText(text: suggestion);
-            _handleSendPressed(message);
-          },
+    return FutureBuilder<List<String>>(
+      future: _enhancedAIService.getAISuggestions(),
+      builder: (context, snapshot) {
+        final suggestions = snapshot.data ??
+            ['Payment reminder', 'Check my dues', 'Due date alerts', 'Society information', 'Help with payments'];
+
+        return Column(
+          children: [
+            // Quick action buttons
+            FutureBuilder<List<Map<String, String>>>(
+              future: _enhancedAIService.getQuickActions(),
+              builder: (context, quickActionsSnapshot) {
+                final quickActions = quickActionsSnapshot.data ?? [];
+
+                if (quickActions.isNotEmpty) {
+                  return Column(
+                    children: [
+                      Text(
+                        'Quick Actions',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : AppColors.lightText,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.5,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                        itemCount: quickActions.length > 4 ? 4 : quickActions.length,
+                        itemBuilder: (context, index) {
+                          final action = quickActions[index];
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primaryBlue.withAlpha(26),
+                                  AppColors.primaryBlue.withAlpha(13),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.primaryBlue.withAlpha(51),
+                                width: 1,
+                              ),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () {
+                                  final message = types.PartialText(text: action['command']!);
+                                  _handleSendPressed(message);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        action['title']!,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDarkMode ? Colors.white : AppColors.lightText,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        action['description']!,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color:
+                                              isDarkMode ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+
+            // Suggestion chips
+            Text(
+              'Suggestions',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : AppColors.lightText,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: suggestions.map((suggestion) {
+                return ActionChip(
+                  label: Text(suggestion),
+                  backgroundColor: isDarkMode ? AppColors.darkCard : AppColors.lightContainerHighlight,
+                  labelStyle: TextStyle(
+                    color: isDarkMode ? Colors.white : AppColors.lightText,
+                  ),
+                  side: BorderSide(
+                    color: isDarkMode ? Colors.transparent : AppColors.primaryBlue.withAlpha(51),
+                  ),
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  onPressed: () {
+                    final message = types.PartialText(text: suggestion);
+                    _handleSendPressed(message);
+                  },
+                );
+              }).toList(),
+            ),
+          ],
         );
-      }).toList(),
+      },
     );
   }
 

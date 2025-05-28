@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:society_management/chat/view/chat_page.dart';
 import 'package:society_management/complaints/view/basic_complaints_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/dashboard/widget/quick_action_button.dart';
@@ -8,7 +9,7 @@ import 'package:society_management/maintenance/view/maintenance_periods_page.dar
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/users/view/user_management_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
-  
+
 class QuickActionsSection extends StatelessWidget {
   const QuickActionsSection({super.key});
 
@@ -125,6 +126,21 @@ class QuickActionsSection extends StatelessWidget {
               : AppColors.gradientLightPurple[1],
           onPressed: () {
             context.push(const UserInformationPage());
+          },
+        ),
+
+        // AI Chat Assistant
+        QuickActionButton(
+          icon: Icons.smart_toy,
+          label: "AI Assistant",
+          startColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientOrangeYellow[0]
+              : AppColors.gradientLightOrange[0],
+          endColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.gradientOrangeYellow[1]
+              : AppColors.gradientLightOrange[1],
+          onPressed: () {
+            context.push(const ChatPage());
           },
         ),
       ],

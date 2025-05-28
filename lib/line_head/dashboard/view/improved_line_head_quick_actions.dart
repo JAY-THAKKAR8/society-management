@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:society_management/chat/view/chat_page.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/maintenance/view/improved_active_maintenance_stats_page.dart';
 import 'package:society_management/maintenance/view/line_member_maintenance_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
+import 'package:society_management/reports/view/member_report_page.dart';
+import 'package:society_management/reports/view/payment_report_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/users/view/line_head_users_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
@@ -55,12 +59,29 @@ class ImprovedLineHeadQuickActions extends StatelessWidget {
         const SizedBox(height: 16),
         GridView.count(
           crossAxisCount: 2,
-          childAspectRatio: 1.0,
+          childAspectRatio: 0.9,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
+            // AI Assistant - Featured first for Line Heads
+            _buildQuickActionCard(
+              context,
+              icon: Icons.smart_toy,
+              title: "AI Assistant",
+              description: "Line collection insights",
+              gradientColors: isDarkMode
+                  ? [const Color(0xFFE91E63), const Color(0xFFFF5722)] // gradientPinkRed
+                  : [const Color(0xFFEC4899), const Color(0xFFF97316)], // lightPink to orange
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ChatPage()),
+                );
+                onActionComplete?.call();
+              },
+            ),
             _buildQuickActionCard(
               context,
               icon: Icons.group,
@@ -103,53 +124,72 @@ class ImprovedLineHeadQuickActions extends StatelessWidget {
             _buildQuickActionCard(
               context,
               icon: Icons.summarize,
-              title: "Generate Report",
-              description: "Create payment reports",
+              title: "Generate Reports",
+              description: "Payment & member reports",
               gradientColors: isDarkMode
                   ? [const Color(0xFF7C4DFF), const Color(0xFFE040FB)] // gradientPurplePink
                   : [const Color(0xFF8B5CF6), const Color(0xFFA78BFA)], // lightPurple shades
               onTap: () {
-                // Show report options dialog
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Generate Report'),
-                    content: const Text(
-                      'Choose the type of report you want to generate:',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // Show toast message for now
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Report generation coming soon!'),
-                            ),
-                          );
-                        },
-                        child: const Text('Payment Report'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // Show toast message for now
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Report generation coming soon!'),
-                            ),
-                          );
-                        },
-                        child: const Text('Member Report'),
-                      ),
-                    ],
-                  ),
-                );
+                _showReportOptionsDialog(context);
               },
             ),
           ],
         ),
       ],
+    );
+  }
+
+  void _showReportOptionsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Generate Reports'),
+        content: const Text('Choose the type of report you want to generate:'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to Payment Report
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PaymentReportPage(lineNumber: lineNumber ?? ''),
+                ),
+              );
+              onActionComplete?.call();
+            },
+            child: const Text('Payment Report'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to Member Report
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MemberReportPage(lineNumber: lineNumber ?? ''),
+                ),
+              );
+              onActionComplete?.call();
+            },
+            child: const Text('Member Report'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to Line Statistics
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ImprovedActiveMaintenanceStatsPage(),
+                ),
+              );
+              onActionComplete?.call();
+            },
+            child: const Text('Line Statistics'),
+          ),
+        ],
+      ),
     );
   }
 

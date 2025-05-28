@@ -12,7 +12,7 @@ import 'package:society_management/users/repository/i_user_repository.dart';
 /// Service to fetch society data for AI analysis
 class SocietyDataService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final AuthService _authService = AuthService();
+  final AuthService _authService = getIt<AuthService>();
   final IDashboardStatsRepository _statsRepository = getIt<IDashboardStatsRepository>();
   final IMaintenanceRepository _maintenanceRepository = getIt<IMaintenanceRepository>();
   final IUserRepository _userRepository = getIt<IUserRepository>();
@@ -285,6 +285,48 @@ class SocietyDataService {
     }
   }
 
+  /// Get user's pending payments as a list for reminder service
+  Future<List<Map<String, dynamic>>> getUserPendingPaymentsList() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) return [];
+
+      final userId = currentUser.id;
+      if (userId == null) return [];
+
+      // Get all payment records for the current user
+      final paymentsSnapshot = await _firestore.maintenancePayments.where('user_id', isEqualTo: userId).get();
+
+      List<Map<String, dynamic>> pendingPayments = [];
+
+      for (final paymentDoc in paymentsSnapshot.docs) {
+        final paymentData = paymentDoc.data();
+        final amount = (paymentData['amount'] as num?)?.toDouble() ?? 0;
+        final amountPaid = (paymentData['amount_paid'] as num?)?.toDouble() ?? 0;
+        final status = paymentData['status'] as String?;
+
+        // Check if payment is pending
+        if (status != 'paid' && amount > amountPaid) {
+          pendingPayments.add({
+            'id': paymentDoc.id,
+            'amount': amount,
+            'amount_paid': amountPaid,
+            'status': status,
+            'period_id': paymentData['period_id'],
+            'period_name': paymentData['period_name'] ?? 'Unknown Period',
+            'due_date': paymentData['due_date'],
+            'user_name': paymentData['user_name'],
+          });
+        }
+      }
+
+      return pendingPayments;
+    } catch (e) {
+      debugPrint('Error fetching user pending payments: $e');
+      return [];
+    }
+  }
+
   /// Get all society data for AI analysis
   Future<Map<String, dynamic>> getAllSocietyData() async {
     debugPrint('=== Starting getAllSocietyData ===');
@@ -489,6 +531,153 @@ class SocietyDataService {
       };
     } catch (e) {
       return {'error': 'Error fetching society maintenance data: $e'};
+    }
+  }
+
+  /// Get user's payment history
+  Future<List<Map<String, dynamic>>> getUserPaymentHistory() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) return [];
+
+      final userId = currentUser.id;
+      if (userId == null) return [];
+
+      // Get all payment records for the current user
+      final paymentsSnapshot = await _firestore.maintenancePayments.where('user_id', isEqualTo: userId).get();
+
+      List<Map<String, dynamic>> paymentHistory = [];
+
+      for (final paymentDoc in paymentsSnapshot.docs) {
+        final paymentData = paymentDoc.data();
+        paymentHistory.add({
+          'period_name': paymentData['period_name'] ?? 'Unknown Period',
+          'amount': paymentData['amount'] ?? 0,
+          'amount_paid': paymentData['amount_paid'] ?? 0,
+          'status': paymentData['status'] ?? 'pending',
+          'payment_date': paymentData['payment_date'] ?? 'Not recorded',
+          'due_date': paymentData['due_date'] ?? '',
+        });
+      }
+
+      // Sort by most recent first
+      paymentHistory.sort((a, b) {
+        final aDate = a['payment_date'] as String;
+        final bDate = b['payment_date'] as String;
+        return bDate.compareTo(aDate);
+      });
+
+      return paymentHistory;
+    } catch (e) {
+      debugPrint('Error fetching payment history: $e');
+      return [];
+    }
+  }
+
+  /// Get line head information for a specific line
+  Future<Map<String, dynamic>?> getLineHeadInfo(int lineNumber) async {
+    try {
+      final lineNumberStr = lineNumber.toString();
+      final usersSnapshot = await _firestore.users
+          .where('lineNumber', isEqualTo: lineNumberStr)
+          .where('role', whereIn: ['Line Head', 'Line head', 'line head']).get();
+
+      if (usersSnapshot.docs.isNotEmpty) {
+        final lineHeadData = usersSnapshot.docs.first.data();
+        return {
+          'name': lineHeadData['name'] ?? 'Unknown',
+          'phone': lineHeadData['phone'] ?? 'Not available',
+          'email': lineHeadData['email'] ?? 'Not available',
+          'line_number': lineHeadData['lineNumber'] ?? lineNumberStr,
+        };
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching line head info: $e');
+      return null;
+    }
+  }
+
+  /// Get user's complaints
+  Future<List<Map<String, dynamic>>> getUserComplaints() async {
+    try {
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser == null) return [];
+
+      final userEmail = currentUser.email;
+      if (userEmail == null) return [];
+
+      final complaintsSnapshot = await _firestore.complaints
+          .where('user_email', isEqualTo: userEmail)
+          .orderBy('submitted_date', descending: true)
+          .get();
+
+      return complaintsSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'title': data['title'] ?? 'No title',
+          'description': data['description'] ?? 'No description',
+          'category': data['category'] ?? 'General',
+          'status': data['status'] ?? 'pending',
+          'submitted_date': data['submitted_date'] ?? 'Unknown date',
+          'resolved_date': data['resolved_date'],
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetching user complaints: $e');
+      return [];
+    }
+  }
+
+  /// Get upcoming events
+  Future<List<Map<String, dynamic>>> getUpcomingEvents() async {
+    try {
+      final now = DateTime.now();
+      final eventsSnapshot = await _firestore.events
+          .where('event_date', isGreaterThanOrEqualTo: now.toIso8601String())
+          .orderBy('event_date')
+          .limit(10)
+          .get();
+
+      return eventsSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'title': data['title'] ?? 'Event',
+          'description': data['description'] ?? 'No description',
+          'event_date': data['event_date'] ?? 'Date TBD',
+          'location': data['location'] ?? 'Society premises',
+          'organizer': data['organizer'] ?? 'Society management',
+          'category': data['category'] ?? 'General',
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetching upcoming events: $e');
+      return [];
+    }
+  }
+
+  /// Get society expenses
+  Future<List<Map<String, dynamic>>> getSocietyExpenses() async {
+    try {
+      final expensesSnapshot = await _firestore.expenses.orderBy('date', descending: true).limit(50).get();
+
+      return expensesSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'description': data['description'] ?? 'No description',
+          'amount': data['amount'] ?? 0,
+          'category': data['category'] ?? 'Other',
+          'date': data['date'] ?? 'Unknown date',
+          'approved_by': data['approved_by'] ?? 'Unknown',
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetching society expenses: $e');
+      return [];
     }
   }
 }

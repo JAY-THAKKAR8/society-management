@@ -6,7 +6,7 @@ class GeminiConfig {
 
   // Gemini API endpoint - Using the v1beta endpoint for gemini-2.0-flash
   static const String apiEndpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent/key=$apiKey';
 
   // Model to use
   static const String model = 'gemini-2.0-flash';

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:society_management/chat/view/chat_page.dart';
 import 'package:society_management/dashboard/widgets/improved_quick_action_button.dart';
 import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
@@ -80,6 +81,17 @@ class AdminQuickActionsSection extends StatelessWidget {
               endColor: const Color(0xFF2F80ED),
               onPressed: () {
                 context.push(const ExpenseDashboardPage());
+              },
+            ),
+
+            // AI Chat Assistant
+            ImprovedQuickActionButton(
+              label: "AI Assistant",
+              icon: Icons.smart_toy,
+              startColor: const Color(0xFFFF9A9E),
+              endColor: const Color(0xFFFECFEF),
+              onPressed: () {
+                context.push(const ChatPage());
               },
             ),
           ],

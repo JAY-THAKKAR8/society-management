@@ -11,11 +11,11 @@ import 'package:society_management/injector/injector.dart';
 import 'package:society_management/line_head/dashboard/view/improved_line_head_quick_actions.dart';
 import 'package:society_management/line_head/dashboard/view/improved_line_head_summary_section.dart';
 import 'package:society_management/line_head/dashboard/view/line_head_activity_section.dart';
+import 'package:society_management/line_head/dashboard/widget/line_head_alert_dialog.dart';
 import 'package:society_management/line_member/dashboard/view/fixed_line_member_dashboard.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
-import 'package:society_management/maintenance/view/line_head_alert_dialog.dart';
 import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/users/model/user_model.dart';
@@ -78,6 +78,8 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
     // Check for pending maintenance after the widget is fully built
     if (_currentUser != null && _currentUser?.lineNumber != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        debugPrint(
+            '🚨 Checking pending maintenance for Line Head: ${_currentUser?.name}, Line: ${_currentUser?.lineNumber}');
         _checkPendingMaintenance();
       });
     }
@@ -85,19 +87,30 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
 
   Future<void> _checkPendingMaintenance() async {
     try {
-      if (_currentUser?.lineNumber == null) return;
+      debugPrint('🔍 _checkPendingMaintenance started');
+      if (_currentUser?.lineNumber == null) {
+        debugPrint('❌ No current user or line number found');
+        return;
+      }
+
+      debugPrint('✅ Line Head: ${_currentUser?.name}, Line: ${_currentUser?.lineNumber}');
 
       // Get active maintenance periods
       final maintenanceRepository = getIt<IMaintenanceRepository>();
+      debugPrint('📋 Getting active maintenance periods...');
       final periodsResult = await maintenanceRepository.getActiveMaintenancePeriods();
 
       periodsResult.fold(
         (failure) {
           // Silently fail, we don't want to disrupt the dashboard
-          debugPrint('Error checking maintenance periods: ${failure.message}');
+          debugPrint('❌ Error checking maintenance periods: ${failure.message}');
         },
         (periods) async {
-          if (periods.isEmpty) return;
+          debugPrint('📋 Found ${periods.length} active periods');
+          if (periods.isEmpty) {
+            debugPrint('❌ No active periods found');
+            return;
+          }
 
           // Sort periods by due date (most recent first)
           periods.sort((a, b) {
@@ -110,11 +123,13 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
           MaintenancePeriodModel? periodWithPendingPayments;
           int pendingCount = 0;
           double pendingAmount = 0;
+          double collectedAmount = 0;
 
           // For each active period, check if there are pending payments in this line
           for (final period in periods) {
             if (period.id == null) continue;
 
+            debugPrint('🔍 Checking payments for period: ${period.name}, Line: ${_currentUser!.lineNumber}');
             final paymentsResult = await maintenanceRepository.getPaymentsForLine(
               periodId: period.id!,
               lineNumber: _currentUser!.lineNumber!,
@@ -123,9 +138,10 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
             paymentsResult.fold(
               (failure) {
                 // Silently fail
-                debugPrint('Error checking payments: ${failure.message}');
+                debugPrint('❌ Error checking payments: ${failure.message}');
               },
               (payments) {
+                debugPrint('💰 Found ${payments.length} payments for this period');
                 // Count pending payments
                 final pendingPayments = payments
                     .where((payment) =>
@@ -134,12 +150,19 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                         payment.status == PaymentStatus.partiallyPaid)
                     .toList();
 
+                debugPrint('⏳ Found ${pendingPayments.length} pending payments');
                 if (pendingPayments.isNotEmpty) {
-                  // Calculate total pending amount
+                  // Calculate total pending amount and collected amount for this line
                   double currentPendingAmount = 0;
-                  for (final payment in pendingPayments) {
+                  double currentCollectedAmount = 0;
+
+                  for (final payment in payments) {
                     if (payment.amount != null) {
-                      currentPendingAmount += (payment.amount! - payment.amountPaid);
+                      currentCollectedAmount += payment.amountPaid;
+                      final remainingAmount = payment.amount! - payment.amountPaid;
+                      if (remainingAmount > 0) {
+                        currentPendingAmount += remainingAmount;
+                      }
                     }
                   }
 
@@ -148,6 +171,7 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                     periodWithPendingPayments = period;
                     pendingCount = pendingPayments.length;
                     pendingAmount = currentPendingAmount;
+                    collectedAmount = currentCollectedAmount;
                   }
                 }
               },
@@ -155,18 +179,32 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
           }
 
           // Show alert dialog if there are pending payments
+          debugPrint(
+              '🚨 Final check: periodWithPendingPayments = ${periodWithPendingPayments?.name}, mounted = $mounted');
+          debugPrint('📊 Pending count: $pendingCount, Pending amount: ₹$pendingAmount');
+
           if (periodWithPendingPayments != null && mounted) {
-            // Always show for line heads, especially for those with "Line head + Member" role
-            showDialog(
-              context: context,
-              barrierDismissible: false, // User must interact with the dialog
-              builder: (context) => LineHeadAlertDialog(
-                period: periodWithPendingPayments!, // Use ! to assert non-null
-                lineNumber: _currentUser!.lineNumber!,
-                pendingCount: pendingCount,
-                pendingAmount: pendingAmount,
-              ),
-            );
+            debugPrint('✅ Showing Line Head Alert Dialog');
+            // Add small delay to ensure UI is fully loaded
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                // Always show for line heads, especially for those with "Line head + Member" role
+                showDialog(
+                  context: context,
+                  barrierDismissible: false, // User must interact with the dialog
+                  builder: (context) => LineHeadAlertDialog(
+                    period: periodWithPendingPayments!, // Use ! to assert non-null
+                    lineNumber: _currentUser!.lineNumber!,
+                    pendingCount: pendingCount,
+                    pendingAmount: pendingAmount,
+                    collectedAmount: collectedAmount,
+                  ),
+                );
+              }
+            });
+          } else {
+            debugPrint(
+                '❌ Alert dialog NOT shown - periodWithPendingPayments: ${periodWithPendingPayments?.name}, mounted: $mounted');
           }
         },
       );
@@ -193,6 +231,15 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
 
         // Start animations
         _animationController.forward();
+
+        // Check for pending maintenance after user is loaded
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          debugPrint(
+              '🚨 User loaded, checking pending maintenance for Line Head: ${user.name}, Line: ${user.lineNumber}');
+          _checkPendingMaintenance();
+        });
+
+        // Test alert removed - real alert is working!
       } else {
         setState(() {
           _isLoading = false;
