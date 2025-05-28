@@ -7,6 +7,7 @@ import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/chat/view/society_insights_page.dart';
 import 'package:society_management/constants/app_colors.dart';
+import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/kdv_logo.dart';
@@ -118,6 +119,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                         );
                       },
                       tooltip: 'Society Insights (AI)',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.settings),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const CommonSettingsPage(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Settings',
                     ),
                     IconButton(
                       icon: const Icon(Icons.info_outline),

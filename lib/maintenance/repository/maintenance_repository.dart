@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:society_management/constants/app_constants.dart';
+import 'package:society_management/dashboard/repository/i_dashboard_stats_repository.dart';
 import 'package:society_management/extentions/firestore_extentions.dart';
+import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
@@ -378,6 +381,23 @@ class MaintenanceRepository extends IMaintenanceRepository {
             'total_pending': totalPending - paymentDifference > 0 ? totalPending - paymentDifference : 0.0,
             'updated_at': now,
           });
+        }
+
+        // Update dashboard stats
+        try {
+          final dashboardStatsRepository = getIt<IDashboardStatsRepository>();
+          final isFullyPaid = paymentStatus == PaymentStatus.paid;
+
+          await dashboardStatsRepository.updateDashboardsForMaintenancePayment(
+            lineNumber: userLineNumber,
+            amountPaid: amountPaid - previousAmountPaid, // Only the difference
+            amountPending: amount - amountPaid,
+            isFullyPaid: isFullyPaid,
+            userId: userId,
+          );
+        } catch (e) {
+          // Log error but don't fail the payment recording
+          debugPrint('Error updating dashboard stats: $e');
         }
 
         // Log activity

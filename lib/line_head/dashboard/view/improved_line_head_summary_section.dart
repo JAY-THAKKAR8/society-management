@@ -3,7 +3,6 @@ import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/dashboard/repository/i_dashboard_stats_repository.dart';
 import 'package:society_management/dashboard/widgets/fixed_gradient_summary_card.dart';
 import 'package:society_management/injector/injector.dart';
-import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/utility.dart';
@@ -66,84 +65,19 @@ class ImprovedLineHeadSummarySectionState extends State<ImprovedLineHeadSummaryS
         },
         (stats) {
           setState(() {
+            // Directly use the values from the stats collection
             _lineMembers = stats.totalMembers;
             _pendingAmount = stats.maintenancePending;
             _collectedAmount = stats.maintenanceCollected;
             _activeMaintenancePeriods = stats.activeMaintenance;
+            _fullyPaidUsers = stats.fullyPaidUsers;
 
-            // Calculate pending and fully paid users
-            if (_lineMembers > 0) {
-              // Get more accurate counts by fetching the latest period's payments
-              final maintenanceRepository = getIt<IMaintenanceRepository>();
-              maintenanceRepository.getActiveMaintenancePeriods().then((periodsResult) {
-                periodsResult.fold(
-                  (failure) {
-                    // Use approximate counts if we can't get detailed data
-                    if (stats.maintenancePending > 0) {
-                      _pendingPayments = _lineMembers;
-                      _fullyPaidUsers = 0;
-                    } else {
-                      _pendingPayments = 0;
-                      _fullyPaidUsers = _lineMembers;
-                    }
-                    setState(() {});
-                  },
-                  (periods) async {
-                    if (periods.isEmpty) {
-                      _pendingPayments = 0;
-                      _fullyPaidUsers = 0;
-                      setState(() {});
-                      return;
-                    }
+            // Calculate pending payments as total members minus fully paid users
+            _pendingPayments = _lineMembers - _fullyPaidUsers;
 
-                    // Get payments for the most recent period
-                    final latestPeriod = periods.first;
-                    if (latestPeriod.id == null) {
-                      setState(() {});
-                      return;
-                    }
-
-                    final paymentsResult = await maintenanceRepository.getPaymentsForLine(
-                      periodId: latestPeriod.id!,
-                      lineNumber: widget.lineNumber!,
-                    );
-
-                    paymentsResult.fold(
-                      (failure) {
-                        // Use approximate counts if we can't get detailed data
-                        if (stats.maintenancePending > 0) {
-                          _pendingPayments = _lineMembers;
-                          _fullyPaidUsers = 0;
-                        } else {
-                          _pendingPayments = 0;
-                          _fullyPaidUsers = _lineMembers;
-                        }
-                        setState(() {});
-                      },
-                      (payments) {
-                        _pendingPayments = 0;
-                        _fullyPaidUsers = 0;
-
-                        for (final payment in payments) {
-                          final amount = payment.amount ?? 0.0;
-                          final amountPaid = payment.amountPaid;
-
-                          if (amountPaid >= amount && amount > 0) {
-                            _fullyPaidUsers++;
-                          } else if (amount > 0) {
-                            _pendingPayments++;
-                          }
-                        }
-
-                        setState(() {});
-                      },
-                    );
-                  },
-                );
-              });
-            } else {
+            // Ensure we don't have negative values
+            if (_pendingPayments < 0) {
               _pendingPayments = 0;
-              _fullyPaidUsers = 0;
             }
 
             _isLoading = false;

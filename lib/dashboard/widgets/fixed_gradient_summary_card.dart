@@ -47,6 +47,7 @@ class GradientSummaryCard extends StatelessWidget {
               ),
             ],
           ),
+          height: 140, // Fixed height for all cards
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -88,16 +89,20 @@ class GradientSummaryCard extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 22,
+                    fontSize: 20, // Slightly smaller font
+                    overflow: TextOverflow.ellipsis, // Handle overflow
                   ),
+                  maxLines: 1, // Limit to one line
                 ),
                 const SizedBox(height: 4),
                 Text(
                   title,
                   style: const TextStyle(
                     color: Color(0xCCFFFFFF), // 80% opacity white
-                    fontSize: 14,
+                    fontSize: 13, // Slightly smaller font
+                    overflow: TextOverflow.ellipsis, // Handle overflow
                   ),
+                  maxLines: 1, // Limit to one line
                 ),
               ],
             ),

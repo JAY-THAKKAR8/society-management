@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:society_management/dashboard/widgets/improved_quick_action_button.dart';
 import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
+import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/users/view/user_management_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 
@@ -57,6 +58,17 @@ class AdminQuickActionsSection extends StatelessWidget {
               endColor: const Color(0xFF185A9D),
               onPressed: () {
                 context.push(const MaintenancePeriodsPage());
+              },
+            ),
+
+            // Settings
+            ImprovedQuickActionButton(
+              label: "Settings",
+              icon: Icons.settings,
+              startColor: const Color(0xFF8E2DE2),
+              endColor: const Color(0xFF4A00E0),
+              onPressed: () {
+                context.push(const CommonSettingsPage());
               },
             ),
 

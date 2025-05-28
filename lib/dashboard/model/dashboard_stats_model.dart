@@ -7,6 +7,7 @@ class DashboardStatsModel extends Equatable {
   final double maintenanceCollected;
   final double maintenancePending;
   final int activeMaintenance;
+  final int fullyPaidUsers;
   final String? updatedAt;
 
   const DashboardStatsModel({
@@ -15,6 +16,7 @@ class DashboardStatsModel extends Equatable {
     this.maintenanceCollected = 0.0,
     this.maintenancePending = 0.0,
     this.activeMaintenance = 0,
+    this.fullyPaidUsers = 0,
     this.updatedAt,
   });
 
@@ -26,6 +28,7 @@ class DashboardStatsModel extends Equatable {
       maintenanceCollected: (json['maintenance_collected'] as num?)?.toDouble() ?? 0.0,
       maintenancePending: (json['maintenance_pending'] as num?)?.toDouble() ?? 0.0,
       activeMaintenance: json['active_maintenance'] as int? ?? 0,
+      fullyPaidUsers: json['fully_paid'] as int? ?? 0,
       updatedAt: timestamp?.toDate().toString(),
     );
   }
@@ -36,10 +39,18 @@ class DashboardStatsModel extends Equatable {
         'maintenance_collected': maintenanceCollected,
         'maintenance_pending': maintenancePending,
         'active_maintenance': activeMaintenance,
+        'fully_paid': fullyPaidUsers,
         'updated_at': updatedAt,
       };
 
   @override
-  List<Object?> get props =>
-      [totalMembers, totalExpenses, maintenanceCollected, maintenancePending, activeMaintenance, updatedAt];
+  List<Object?> get props => [
+        totalMembers,
+        totalExpenses,
+        maintenanceCollected,
+        maintenancePending,
+        activeMaintenance,
+        fullyPaidUsers,
+        updatedAt
+      ];
 }

@@ -26,6 +26,8 @@ abstract class IDashboardStatsRepository {
     required String lineNumber,
     required double amountPaid,
     required double amountPending,
+    bool isFullyPaid = false,
+    String? userId,
   });
 
   /// Update dashboard stats when a maintenance period is created

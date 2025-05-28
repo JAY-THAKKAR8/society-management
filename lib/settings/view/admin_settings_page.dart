@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:society_management/dashboard/repository/i_dashboard_stats_repository.dart';
+import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/view/fix_line_inconsistencies_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -83,32 +85,106 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
 
       // List of collections to clear
       final collections = [
+        // Maintenance related collections (highest priority)
+        'maintenance', // Direct maintenance collection
         'maintenance_periods',
         'maintenance_payments',
-        'expenses',
-        'expense_categories',
-        'complaints',
-        'activities',
-        'notifications',
+        'maintenance_stats',
+
+        // Dashboard stats collections
+        'admin_dashboard_stats',
+        'line_head_dashboard_stats',
+        'user_dashboard_stats',
+        'user_specific_stats',
         'dashboard_stats',
         'dashboard_counts',
         'dashboard_data',
-        'stats',
-        'counts',
-        'summary_data',
         'line_stats',
         'user_stats',
+        'stats', // Direct stats collection
+
+        // Other data collections
+        'expenses',
+        'expense_categories',
         'expense_stats',
-        'maintenance_stats',
+        'complaints',
+        'activities',
+        'notifications',
+        'counts',
+        'summary_data',
+        'events',
         // Add any other collections you want to clear
       ];
 
       // Delete all documents in each collection
       for (final collectionName in collections) {
+        debugPrint('Clearing collection: $collectionName');
         final querySnapshot = await firestore.collection(collectionName).get();
 
+        // Log the number of documents found
+        debugPrint('Found ${querySnapshot.docs.length} documents in $collectionName');
+
+        // Use a batch to delete documents in chunks for better performance
+        var batch = firestore.batch();
+        int count = 0;
+
         for (final doc in querySnapshot.docs) {
-          await doc.reference.delete();
+          batch.delete(doc.reference);
+          count++;
+
+          // Commit batch every 500 operations to avoid hitting limits
+          if (count >= 500) {
+            await batch.commit();
+            batch = firestore.batch();
+            count = 0;
+            debugPrint('Committed batch of 500 deletes for $collectionName');
+          }
+        }
+
+        // Commit any remaining operations
+        if (count > 0) {
+          await batch.commit();
+          debugPrint('Committed final batch of $count deletes for $collectionName');
+        }
+
+        // Double-check if the collection is empty
+        final verifySnapshot = await firestore.collection(collectionName).get();
+        if (verifySnapshot.docs.isNotEmpty) {
+          debugPrint(
+              'WARNING: Collection $collectionName still has ${verifySnapshot.docs.length} documents after batch delete');
+
+          // Force delete any remaining documents individually
+          for (final doc in verifySnapshot.docs) {
+            try {
+              await doc.reference.delete();
+              debugPrint('Forced deletion of document ${doc.id} from $collectionName');
+            } catch (e) {
+              debugPrint('Error deleting document ${doc.id} from $collectionName: $e');
+            }
+          }
+        } else {
+          debugPrint('Successfully cleared collection $collectionName');
+        }
+      }
+
+      // Specifically check and clear critical collections
+      final criticalCollections = ['maintenance', 'admin_dashboard_stats', 'stats'];
+
+      for (final collectionName in criticalCollections) {
+        final querySnapshot = await firestore.collection(collectionName).get();
+        if (querySnapshot.docs.isNotEmpty) {
+          debugPrint(
+              'CRITICAL: Collection $collectionName still has ${querySnapshot.docs.length} documents after clearing');
+
+          // Force delete again with individual deletes
+          for (final doc in querySnapshot.docs) {
+            try {
+              await doc.reference.delete();
+              debugPrint('Deleted document ${doc.id} from $collectionName');
+            } catch (e) {
+              debugPrint('Error deleting document ${doc.id} from $collectionName: $e');
+            }
+          }
         }
       }
 
@@ -124,6 +200,118 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       } catch (e) {
         // Ignore errors when creating activity record
         // Silently ignore
+      }
+
+      // Force reset of dashboard stats
+      try {
+        // Manually create empty stats documents to ensure they're completely reset
+        final now = Timestamp.now();
+
+        // Reset admin dashboard stats - first check if it exists
+        final adminStatsDoc = await firestore.collection('admin_dashboard_stats').doc('stats').get();
+
+        if (adminStatsDoc.exists) {
+          // Delete it first to ensure clean slate
+          await firestore.collection('admin_dashboard_stats').doc('stats').delete();
+          debugPrint('Deleted existing admin_dashboard_stats/stats document');
+        }
+
+        // Create a new document with zeroed values
+        await firestore.collection('admin_dashboard_stats').doc('stats').set({
+          'total_members': 0,
+          'total_expenses': 0.0,
+          'maintenance_collected': 0.0,
+          'maintenance_pending': 0.0,
+          'active_maintenance': 0,
+          'fully_paid': 0,
+          'updated_at': now,
+        });
+        debugPrint('Created new admin_dashboard_stats/stats document with zeroed values');
+
+        // Import the dashboard repository
+        final dashboardStatsRepository = getIt<IDashboardStatsRepository>();
+
+        // Update admin dashboard stats
+        await dashboardStatsRepository.updateAdminDashboardStats();
+
+        // Update all line stats
+        final usersSnapshot = await firestore.collection('users').get();
+        final lineNumbers = usersSnapshot.docs
+            .map((doc) => doc.data()['line_number'] as String?)
+            .where((line) => line != null)
+            .toSet()
+            .cast<String>();
+
+        // Reset line head and user dashboard stats
+        for (final lineNumber in lineNumbers) {
+          // Reset line head dashboard stats
+          await firestore.collection('line_head_dashboard_stats').doc(lineNumber).set({
+            'total_members': 0,
+            'total_expenses': 0.0,
+            'maintenance_collected': 0.0,
+            'maintenance_pending': 0.0,
+            'active_maintenance': 0,
+            'fully_paid': 0,
+            'line_number': lineNumber,
+            'updated_at': now,
+          });
+
+          // Reset user dashboard stats
+          await firestore.collection('user_dashboard_stats').doc(lineNumber).set({
+            'total_members': 0,
+            'total_expenses': 0.0,
+            'maintenance_collected': 0.0,
+            'maintenance_pending': 0.0,
+            'active_maintenance': 0,
+            'fully_paid': 0,
+            'line_number': lineNumber,
+            'updated_at': now,
+          });
+
+          // Update line stats
+          await dashboardStatsRepository.updateLineStats(lineNumber);
+        }
+
+        // Reset user-specific stats
+        for (final userDoc in usersSnapshot.docs) {
+          final userId = userDoc.id;
+          await firestore.collection('user_specific_stats').doc(userId).set({
+            'total_members': 1,
+            'total_expenses': 0.0,
+            'maintenance_collected': 0.0,
+            'maintenance_pending': 0.0,
+            'active_maintenance': 0,
+            'fully_paid': 0,
+            'line_number': userDoc.data()['line_number'],
+            'updated_at': now,
+          });
+        }
+
+        // Reset the direct stats document
+        final statsDoc = await firestore.collection('stats').doc('stats').get();
+        if (statsDoc.exists) {
+          // Delete it first
+          await firestore.collection('stats').doc('stats').delete();
+          debugPrint('Deleted existing stats/stats document');
+        }
+
+        // Create a new document with zeroed values
+        await firestore.collection('stats').doc('stats').set({
+          'active_maintenance': 0,
+          'fully_paid': 0,
+          'maintenance_collected': 0.0,
+          'maintenance_pending': 0.0,
+          'total_expenses': 0.0,
+          'total_members': 0,
+          'updated_at': now,
+        });
+        debugPrint('Created new stats/stats document with zeroed values');
+
+        // Force update of all stats by triggering a maintenance period creation update
+        await dashboardStatsRepository.updateDashboardsForMaintenancePeriodCreation();
+      } catch (e) {
+        // Log but don't fail the operation
+        debugPrint('Error resetting dashboard stats: $e');
       }
 
       setState(() {

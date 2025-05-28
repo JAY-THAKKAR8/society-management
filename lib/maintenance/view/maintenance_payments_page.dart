@@ -260,27 +260,30 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
     if (_period == null) return const SizedBox.shrink();
 
     // For line heads, calculate line-specific stats
-    double totalCollected = _period!.totalCollected;
-    double totalPending = _period!.totalPending;
+    double totalCollected = 0;
+    double totalPending = 0;
+    double totalAmount = 0;
 
     if (_isLineHead && _currentUser?.lineNumber != null) {
       // Calculate line-specific totals
-      totalCollected = 0;
-      totalPending = 0;
-
-      // Filter payments for this line head's line
       final linePayments = _payments.where((payment) => payment.userLineNumber == _currentUser?.lineNumber).toList();
 
-      // Calculate totals
+      // Calculate totals for this line only
       for (final payment in linePayments) {
         totalCollected += payment.amountPaid;
         if (payment.amount != null) {
+          totalAmount += payment.amount!;
           totalPending += (payment.amount! - payment.amountPaid);
         }
       }
+    } else {
+      // For admin users, use the period totals
+      totalCollected = _period!.totalCollected;
+      totalPending = _period!.totalPending;
+      totalAmount = _period!.amount ?? 0;
     }
 
-    final collectionPercentage = _period!.amount != null && _period!.amount! > 0 && (totalCollected + totalPending) > 0
+    final collectionPercentage = totalAmount > 0 && (totalCollected + totalPending) > 0
         ? (totalCollected / (totalCollected + totalPending)) * 100
         : 0.0;
 
@@ -297,7 +300,9 @@ class _MaintenancePaymentsPageState extends State<MaintenancePaymentsPage> with 
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Amount: ₹${_period!.amount?.toStringAsFixed(2) ?? '0.00'}',
+                    _isLineHead
+                        ? 'Line Total: ₹${totalAmount.toStringAsFixed(2)}'
+                        : 'Amount: ₹${_period!.amount?.toStringAsFixed(2) ?? '0.00'}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
