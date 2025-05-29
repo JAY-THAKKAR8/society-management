@@ -3,6 +3,7 @@ import 'package:society_management/chat/view/chat_page.dart';
 import 'package:society_management/dashboard/widgets/improved_quick_action_button.dart';
 import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
+import 'package:society_management/reports/view/admin_reports_page.dart';
 import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/users/view/user_management_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
@@ -73,14 +74,19 @@ class AdminQuickActionsSection extends StatelessWidget {
               },
             ),
 
-            // View Reports
+            // Generate Reports
             ImprovedQuickActionButton(
-              label: "Reports",
-              icon: Icons.bar_chart,
+              label: "Generate Reports",
+              icon: Icons.summarize,
               startColor: const Color(0xFF56CCF2),
               endColor: const Color(0xFF2F80ED),
               onPressed: () {
-                context.push(const ExpenseDashboardPage());
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminReportsPage(),
+                  ),
+                );
               },
             ),
 

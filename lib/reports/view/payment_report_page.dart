@@ -7,6 +7,8 @@ import 'package:society_management/maintenance/model/maintenance_period_model.da
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/reports/service/report_service.dart';
 import 'package:society_management/theme/theme_utils.dart';
+import 'package:society_management/users/model/user_model.dart';
+import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
 import 'package:society_management/widget/common_gradient_button.dart';
@@ -26,10 +28,12 @@ class PaymentReportPage extends StatefulWidget {
 
 class _PaymentReportPageState extends State<PaymentReportPage> {
   final IMaintenanceRepository _maintenanceRepository = getIt<IMaintenanceRepository>();
+  final IUserRepository _userRepository = getIt<IUserRepository>();
 
   bool _isLoading = false;
   List<MaintenancePaymentModel> _payments = [];
   List<MaintenancePeriodModel> _periods = [];
+  UserModel? _currentUser;
 
   String _selectedReportType = 'all';
   DateTime? _startDate;
@@ -39,8 +43,6 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
     {'value': 'all', 'label': 'All Payments'},
     {'value': 'paid', 'label': 'Paid Payments'},
     {'value': 'pending', 'label': 'Pending Payments'},
-    {'value': 'overdue', 'label': 'Overdue Payments'},
-    {'value': 'partially_paid', 'label': 'Partially Paid'},
   ];
 
   @override
@@ -53,6 +55,13 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
     setState(() => _isLoading = true);
 
     try {
+      // Load current user to get line head name
+      final userResult = await _userRepository.getCurrentUser();
+      userResult.fold(
+        (failure) => {}, // Ignore user loading failure
+        (user) => _currentUser = user,
+      );
+
       // Load all periods
       final periodsResult = await _maintenanceRepository.getAllMaintenancePeriods();
       periodsResult.fold(
@@ -98,6 +107,7 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
         reportType: _selectedReportType,
         startDate: _startDate?.toString(),
         endDate: _endDate?.toString(),
+        lineHeadName: _currentUser?.name,
       );
 
       await ReportService.shareReport(reportFile, 'Payment');
