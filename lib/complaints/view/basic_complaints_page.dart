@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:society_management/complaints/model/complaint_model.dart';
 import 'package:society_management/complaints/repository/i_complaint_repository.dart';
 import 'package:society_management/complaints/view/complaint_response_page.dart';
-import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -222,7 +221,7 @@ class _BasicComplaintsPageState extends State<BasicComplaintsPage> {
                   const SizedBox(height: 16),
                   const Divider(),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Admin Response:',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),

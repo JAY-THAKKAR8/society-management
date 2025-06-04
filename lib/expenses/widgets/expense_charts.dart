@@ -25,8 +25,7 @@ class ExpenseCharts extends StatelessWidget {
       children: [
         _buildCategoryPieChart(context),
         const SizedBox(height: 24),
-        if (totalMaintenance != null && totalMaintenance! > 0)
-          _buildExpenseVsMaintenanceComparison(context),
+        if (totalMaintenance != null && totalMaintenance! > 0) _buildExpenseVsMaintenanceComparison(context),
         const SizedBox(height: 24),
         _buildMonthlyTrendChart(context),
       ],
@@ -51,7 +50,7 @@ class ExpenseCharts extends StatelessWidget {
 
     // Take top 5 categories for better visualization
     final topCategories = sortedCategories.take(5).toList();
-    
+
     // Calculate total for percentage
     final totalAmount = statistics!['total_amount'] as double? ?? 1.0;
 
@@ -74,81 +73,79 @@ class ExpenseCharts extends StatelessWidget {
   }
 
   Widget _buildSimplePieChart(
-    BuildContext context, 
+    BuildContext context,
     List<MapEntry<String, dynamic>> categories,
     double totalAmount,
   ) {
     final isDark = ThemeUtils.isDarkMode(context);
-    
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = constraints.maxWidth * 0.5;
-        final centerX = constraints.maxWidth / 2;
-        final centerY = 100.0;
-        
-        // Draw pie chart manually
-        return Stack(
-          children: [
-            // Center circle with total
-            Positioned(
-              left: centerX - size * 0.3,
-              top: centerY - size * 0.3,
-              child: Container(
-                width: size * 0.6,
-                height: size * 0.6,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Total',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      Text(
-                        NumberFormat.compactCurrency(
-                          symbol: '₹',
-                          decimalDigits: 0,
-                          locale: 'en_IN',
-                        ).format(totalAmount),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final size = constraints.maxWidth * 0.5;
+      final centerX = constraints.maxWidth / 2;
+      const centerY = 100.0;
+
+      // Draw pie chart manually
+      return Stack(
+        children: [
+          // Center circle with total
+          Positioned(
+            left: centerX - size * 0.3,
+            top: centerY - size * 0.3,
+            child: Container(
+              width: size * 0.6,
+              height: size * 0.6,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Total',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Text(
+                      NumberFormat.compactCurrency(
+                        symbol: '₹',
+                        decimalDigits: 0,
+                        locale: 'en_IN',
+                      ).format(totalAmount),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            
-            // Pie segments
-            CustomPaint(
-              size: Size(constraints.maxWidth, 200),
-              painter: SimplePieChartPainter(
-                categories: categories,
-                totalAmount: totalAmount,
-                isDarkMode: isDark,
-              ),
+          ),
+
+          // Pie segments
+          CustomPaint(
+            size: Size(constraints.maxWidth, 200),
+            painter: SimplePieChartPainter(
+              categories: categories,
+              totalAmount: totalAmount,
+              isDarkMode: isDark,
             ),
-            
-            // Legend
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _buildLegend(context, categories, totalAmount),
-            ),
-          ],
-        );
-      }
-    );
+          ),
+
+          // Legend
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildLegend(context, categories, totalAmount),
+          ),
+        ],
+      );
+    });
   }
-  
+
   Widget _buildLegend(
-    BuildContext context, 
+    BuildContext context,
     List<MapEntry<String, dynamic>> categories,
     double totalAmount,
   ) {
@@ -161,7 +158,7 @@ class ExpenseCharts extends StatelessWidget {
         final amount = entry.value as double;
         final percentage = (amount / totalAmount) * 100;
         final color = _getCategoryColor(categoryName);
-        
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -224,9 +221,7 @@ class ExpenseCharts extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: ThemeUtils.isDarkMode(context) 
-                ? Colors.grey.shade800 
-                : Colors.grey.shade100,
+            color: ThemeUtils.isDarkMode(context) ? Colors.grey.shade800 : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -284,20 +279,16 @@ class ExpenseCharts extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               LinearProgressIndicator(
-                value: totalMaintenance! > 0 
-                    ? (totalExpense / totalMaintenance!).clamp(0.0, 1.0) 
-                    : 0.0,
-                backgroundColor: ThemeUtils.isDarkMode(context) 
-                    ? Colors.grey.withAlpha(50) 
-                    : Colors.grey.withAlpha(30),
+                value: totalMaintenance! > 0 ? (totalExpense / totalMaintenance!).clamp(0.0, 1.0) : 0.0,
+                backgroundColor: ThemeUtils.isDarkMode(context) ? Colors.grey.withAlpha(50) : Colors.grey.withAlpha(30),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   totalExpense > totalMaintenance! ? Colors.red : Colors.green,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                isPositive 
-                    ? 'You have a surplus of ${formatter.format(balance)}' 
+                isPositive
+                    ? 'You have a surplus of ${formatter.format(balance)}'
                     : 'You have a deficit of ${formatter.format(balance.abs())}',
                 style: TextStyle(
                   color: isPositive ? Colors.green : Colors.red,
@@ -360,13 +351,10 @@ class ExpenseCharts extends StatelessWidget {
     }
 
     // Sort months chronologically
-    final sortedMonths = monthlyTotals.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
+    final sortedMonths = monthlyTotals.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
 
     // Take last 6 months for better visualization
-    final recentMonths = sortedMonths.length > 6 
-        ? sortedMonths.sublist(sortedMonths.length - 6) 
-        : sortedMonths;
+    final recentMonths = sortedMonths.length > 6 ? sortedMonths.sublist(sortedMonths.length - 6) : sortedMonths;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,7 +375,7 @@ class ExpenseCharts extends StatelessWidget {
   }
 
   Widget _buildSimpleBarChart(
-    BuildContext context, 
+    BuildContext context,
     List<MapEntry<String, dynamic>> monthlyData,
   ) {
     // Find the maximum value for scaling
@@ -398,10 +386,10 @@ class ExpenseCharts extends StatelessWidget {
         maxValue = value;
       }
     }
-    
+
     // Add 10% padding to max value
     maxValue = maxValue * 1.1;
-    
+
     final formatter = NumberFormat.compactCurrency(
       symbol: '₹',
       decimalDigits: 0,
@@ -411,15 +399,13 @@ class ExpenseCharts extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(top: 20, bottom: 30, left: 10, right: 10),
       decoration: BoxDecoration(
-        color: ThemeUtils.isDarkMode(context) 
-            ? Colors.grey.shade800.withOpacity(0.3) 
-            : Colors.grey.shade100,
+        color: ThemeUtils.isDarkMode(context) ? Colors.grey.shade800.withOpacity(0.3) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final barWidth = (constraints.maxWidth - 20) / monthlyData.length - 10;
-          
+
           return Stack(
             children: [
               // Y-axis labels
@@ -445,7 +431,7 @@ class ExpenseCharts extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Horizontal grid lines
               ...List.generate(3, (index) {
                 final y = index * (constraints.maxHeight - 30) / 2;
@@ -455,13 +441,11 @@ class ExpenseCharts extends StatelessWidget {
                   right: 0,
                   child: Container(
                     height: 1,
-                    color: ThemeUtils.isDarkMode(context) 
-                        ? Colors.grey.withOpacity(0.2) 
-                        : Colors.grey.withOpacity(0.3),
+                    color: ThemeUtils.isDarkMode(context) ? Colors.grey.withOpacity(0.2) : Colors.grey.withOpacity(0.3),
                   ),
                 );
               }),
-              
+
               // Bars
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -471,13 +455,13 @@ class ExpenseCharts extends StatelessWidget {
                   final amount = entry.value as double;
                   final percentage = maxValue > 0 ? amount / maxValue : 0;
                   final barHeight = (constraints.maxHeight - 30) * percentage;
-                  
+
                   // Parse month from format YYYY-MM
                   final parts = monthKey.split('-');
-                  final monthName = parts.length > 1 
-                      ? DateFormat('MMM').format(DateTime(int.parse(parts[0]), int.parse(parts[1]))) 
+                  final monthName = parts.length > 1
+                      ? DateFormat('MMM').format(DateTime(int.parse(parts[0]), int.parse(parts[1])))
                       : monthKey;
-                  
+
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -527,7 +511,7 @@ class ExpenseCharts extends StatelessWidget {
       case 'uncategorized':
         return Colors.grey;
     }
-    
+
     // Fall back to hash-based color for unknown categories
     final hash = categoryName.hashCode.abs() % 5;
     switch (hash) {
@@ -551,29 +535,29 @@ class SimplePieChartPainter extends CustomPainter {
   final List<MapEntry<String, dynamic>> categories;
   final double totalAmount;
   final bool isDarkMode;
-  
+
   SimplePieChartPainter({
     required this.categories,
     required this.totalAmount,
     required this.isDarkMode,
   });
-  
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, 100);
     final radius = size.width * 0.25;
-    
+
     double startAngle = -90 * (3.14159 / 180); // Start from top (in radians)
-    
+
     for (final entry in categories) {
       final categoryName = entry.key;
       final amount = entry.value as double;
       final sweepAngle = (amount / totalAmount) * 2 * 3.14159;
-      
+
       final paint = Paint()
         ..color = _getCategoryColor(categoryName)
         ..style = PaintingStyle.fill;
-      
+
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle,
@@ -581,14 +565,14 @@ class SimplePieChartPainter extends CustomPainter {
         true,
         paint,
       );
-      
+
       startAngle += sweepAngle;
     }
   }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-  
+
   Color _getCategoryColor(String categoryName) {
     // Check for known category names first
     switch (categoryName.toLowerCase()) {
@@ -611,7 +595,7 @@ class SimplePieChartPainter extends CustomPainter {
       case 'uncategorized':
         return Colors.grey;
     }
-    
+
     // Fall back to hash-based color for unknown categories
     final hash = categoryName.hashCode.abs() % 5;
     switch (hash) {

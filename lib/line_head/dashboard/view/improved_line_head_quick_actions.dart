@@ -121,6 +121,7 @@ class ImprovedLineHeadQuickActions extends StatelessWidget {
                 onActionComplete?.call();
               },
             ),
+
             _buildQuickActionCard(
               context,
               icon: Icons.summarize,

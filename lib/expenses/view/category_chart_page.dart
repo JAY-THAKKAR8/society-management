@@ -289,7 +289,7 @@ class _CategoryChartPageState extends State<CategoryChartPage> {
     // Sort categories by amount (highest first)
     final sortedCategories = categoryTotals.entries.toList()
       ..sort((a, b) => (b.value as double).compareTo(a.value as double));
-    
+
     // Calculate total for percentage
     final totalAmount = _statistics!['total_amount'] as double? ?? 1.0;
 
@@ -316,74 +316,72 @@ class _CategoryChartPageState extends State<CategoryChartPage> {
     double totalAmount,
   ) {
     final isDark = ThemeUtils.isDarkMode(context);
-    
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = constraints.maxWidth * 0.5;
-        final centerX = constraints.maxWidth / 2;
-        final centerY = 150.0;
-        
-        // Draw pie chart manually
-        return Stack(
-          children: [
-            // Center circle with total
-            Positioned(
-              left: centerX - size * 0.3,
-              top: centerY - size * 0.3,
-              child: Container(
-                width: size * 0.6,
-                height: size * 0.6,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Total',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      Text(
-                        NumberFormat.compactCurrency(
-                          symbol: '₹',
-                          decimalDigits: 0,
-                          locale: 'en_IN',
-                        ).format(totalAmount),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final size = constraints.maxWidth * 0.5;
+      final centerX = constraints.maxWidth / 2;
+      const centerY = 150.0;
+
+      // Draw pie chart manually
+      return Stack(
+        children: [
+          // Center circle with total
+          Positioned(
+            left: centerX - size * 0.3,
+            top: centerY - size * 0.3,
+            child: Container(
+              width: size * 0.6,
+              height: size * 0.6,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Total',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Text(
+                      NumberFormat.compactCurrency(
+                        symbol: '₹',
+                        decimalDigits: 0,
+                        locale: 'en_IN',
+                      ).format(totalAmount),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            
-            // Pie segments
-            CustomPaint(
-              size: Size(constraints.maxWidth, 300),
-              painter: SimplePieChartPainter(
-                categories: categories,
-                totalAmount: totalAmount,
-                isDarkMode: isDark,
-              ),
+          ),
+
+          // Pie segments
+          CustomPaint(
+            size: Size(constraints.maxWidth, 300),
+            painter: SimplePieChartPainter(
+              categories: categories,
+              totalAmount: totalAmount,
+              isDarkMode: isDark,
             ),
-            
-            // Legend
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _buildLegend(categories, totalAmount),
-            ),
-          ],
-        );
-      }
-    );
+          ),
+
+          // Legend
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildLegend(categories, totalAmount),
+          ),
+        ],
+      );
+    });
   }
-  
+
   Widget _buildLegend(
     List<MapEntry<String, dynamic>> categories,
     double totalAmount,
@@ -397,7 +395,7 @@ class _CategoryChartPageState extends State<CategoryChartPage> {
         final amount = entry.value as double;
         final percentage = (amount / totalAmount) * 100;
         final color = _getCategoryColor(categoryName);
-        
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -466,9 +464,7 @@ class _CategoryChartPageState extends State<CategoryChartPage> {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: ThemeUtils.isDarkMode(context) 
-                ? Colors.grey.shade800.withOpacity(0.3) 
-                : Colors.grey.shade100,
+            color: ThemeUtils.isDarkMode(context) ? Colors.grey.shade800.withOpacity(0.3) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -572,7 +568,7 @@ class _CategoryChartPageState extends State<CategoryChartPage> {
                     const Divider(height: 1),
                   ],
                 );
-              }).toList(),
+              }),
               // Total row
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -639,7 +635,7 @@ class _CategoryChartPageState extends State<CategoryChartPage> {
       case 'uncategorized':
         return Colors.grey;
     }
-    
+
     // Fall back to hash-based color for unknown categories
     final hash = categoryName.hashCode.abs() % 5;
     switch (hash) {
@@ -663,29 +659,29 @@ class SimplePieChartPainter extends CustomPainter {
   final List<MapEntry<String, dynamic>> categories;
   final double totalAmount;
   final bool isDarkMode;
-  
+
   SimplePieChartPainter({
     required this.categories,
     required this.totalAmount,
     required this.isDarkMode,
   });
-  
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, 150);
     final radius = size.width * 0.25;
-    
+
     double startAngle = -90 * (3.14159 / 180); // Start from top (in radians)
-    
+
     for (final entry in categories) {
       final categoryName = entry.key;
       final amount = entry.value as double;
       final sweepAngle = (amount / totalAmount) * 2 * 3.14159;
-      
+
       final paint = Paint()
         ..color = _getCategoryColor(categoryName)
         ..style = PaintingStyle.fill;
-      
+
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle,
@@ -693,14 +689,14 @@ class SimplePieChartPainter extends CustomPainter {
         true,
         paint,
       );
-      
+
       startAngle += sweepAngle;
     }
   }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-  
+
   Color _getCategoryColor(String categoryName) {
     // Check for known category names first
     switch (categoryName.toLowerCase()) {
@@ -723,7 +719,7 @@ class SimplePieChartPainter extends CustomPainter {
       case 'uncategorized':
         return Colors.grey;
     }
-    
+
     // Fall back to hash-based color for unknown categories
     final hash = categoryName.hashCode.abs() % 5;
     switch (hash) {

@@ -6,7 +6,6 @@ import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
-import 'package:society_management/widget/common_button.dart';
 import 'package:society_management/widget/theme_aware_card.dart';
 
 class ExpenseCategoryPage extends StatefulWidget {
@@ -303,12 +302,11 @@ class _ExpenseCategoryPageState extends State<ExpenseCategoryPage> {
                     }
 
                     Navigator.of(context).pop();
-                    
+
                     final result = await _repository.addCategory(
                       name: nameController.text.trim(),
-                      description: descriptionController.text.trim().isNotEmpty
-                          ? descriptionController.text.trim()
-                          : null,
+                      description:
+                          descriptionController.text.trim().isNotEmpty ? descriptionController.text.trim() : null,
                       iconName: selectedIcon,
                       colorHex: selectedColor,
                       isCommonExpense: isCommonExpense,
@@ -424,7 +422,7 @@ class _ExpenseCategoryPageState extends State<ExpenseCategoryPage> {
                     }
 
                     Navigator.of(context).pop();
-                    
+
                     // TODO: Implement category update functionality
                     Utility.toast(message: 'Category updated successfully');
                     _loadCategories();
@@ -456,7 +454,7 @@ class _ExpenseCategoryPageState extends State<ExpenseCategoryPage> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                
+
                 final result = await _repository.deleteCategory(
                   categoryId: category.id!,
                 );
@@ -511,9 +509,7 @@ class _ExpenseCategoryPageState extends State<ExpenseCategoryPage> {
                       ? Colors.grey.withOpacity(0.2)
                       : Colors.grey.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: isSelected
-                  ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
-                  : null,
+              border: isSelected ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2) : null,
             ),
             child: Icon(
               entry.value,
@@ -543,7 +539,7 @@ class _ExpenseCategoryPageState extends State<ExpenseCategoryPage> {
       children: colors.map((colorHex) {
         final isSelected = selectedColor == colorHex;
         final color = Color(int.parse(colorHex.replaceAll('#', '0xFF')));
-        
+
         return InkWell(
           onTap: () => onSelect(colorHex),
           child: Container(
@@ -552,13 +548,9 @@ class _ExpenseCategoryPageState extends State<ExpenseCategoryPage> {
             decoration: BoxDecoration(
               color: color.withOpacity(0.8),
               borderRadius: BorderRadius.circular(8),
-              border: isSelected
-                  ? Border.all(color: Colors.white, width: 2)
-                  : null,
+              border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
             ),
-            child: isSelected
-                ? const Icon(Icons.check, color: Colors.white)
-                : null,
+            child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
           ),
         );
       }).toList(),

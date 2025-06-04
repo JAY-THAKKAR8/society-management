@@ -43,7 +43,8 @@ Based on this data, please answer my question: $prompt
       }
 
       // Construct the API URL with the API key
-      final url = '${GeminiConfig.apiEndpoint}?key=$_apiKey';
+      final url =
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey';
 
       debugPrint('Using Gemini API URL: $url');
 

@@ -3,6 +3,7 @@ import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/maintenance/view/improved_active_maintenance_stats_page.dart';
 import 'package:society_management/reports/view/member_report_page.dart';
 import 'package:society_management/reports/view/payment_report_page.dart';
+import 'package:society_management/reports/view/society_overview_report_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/widget/common_app_bar.dart';
@@ -361,10 +362,10 @@ class AdminReportsPage extends StatelessWidget {
   }
 
   void _generateSocietyOverviewReport(BuildContext context) {
-    // TODO: Implement society overview report
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Society Overview Report - Coming Soon!'),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SocietyOverviewReportPage(),
       ),
     );
   }

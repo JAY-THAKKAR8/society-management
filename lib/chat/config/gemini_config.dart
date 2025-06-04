@@ -4,9 +4,9 @@ class GeminiConfig {
   // Google Gemini API key from api_keys.dart
   static const String apiKey = ApiKeys.geminiApiKey;
 
-  // Gemini API endpoint - Using the v1beta endpoint for gemini-2.0-flash
+  // Gemini API endpoint - Using the v1beta endpoint for gemini-1.5-flash
   static const String apiEndpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent/key=$apiKey';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   // Model to use
   static const String model = 'gemini-2.0-flash';

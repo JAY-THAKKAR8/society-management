@@ -5,6 +5,8 @@ import 'package:society_management/chat/service/gemini_service.dart';
 import 'package:society_management/chat/service/mock_ai_service.dart';
 import 'package:society_management/complaints/repository/complaint_repository.dart';
 import 'package:society_management/complaints/repository/i_complaint_repository.dart';
+import 'package:society_management/dashboard/repository/dashboard_stats_repository.dart';
+import 'package:society_management/dashboard/repository/i_dashboard_stats_repository.dart';
 import 'package:society_management/events/repository/event_repository.dart';
 import 'package:society_management/events/repository/event_repository_interface.dart';
 import 'package:society_management/events/service/event_service.dart';
@@ -31,6 +33,13 @@ void updateInjector() {
   if (!getIt.isRegistered<IComplaintRepository>()) {
     getIt.registerFactory<IComplaintRepository>(
       () => ComplaintRepository(getIt()),
+    );
+  }
+
+  // Register the dashboard stats repository
+  if (!getIt.isRegistered<IDashboardStatsRepository>()) {
+    getIt.registerFactory<IDashboardStatsRepository>(
+      () => DashboardStatsRepository(getIt()),
     );
   }
 

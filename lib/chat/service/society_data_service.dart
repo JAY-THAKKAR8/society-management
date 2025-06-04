@@ -12,10 +12,12 @@ import 'package:society_management/users/repository/i_user_repository.dart';
 /// Service to fetch society data for AI analysis
 class SocietyDataService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final AuthService _authService = getIt<AuthService>();
-  final IDashboardStatsRepository _statsRepository = getIt<IDashboardStatsRepository>();
-  final IMaintenanceRepository _maintenanceRepository = getIt<IMaintenanceRepository>();
-  final IUserRepository _userRepository = getIt<IUserRepository>();
+
+  // Use lazy getters to avoid initialization issues
+  AuthService get _authService => getIt<AuthService>();
+  IDashboardStatsRepository get _statsRepository => getIt<IDashboardStatsRepository>();
+  IMaintenanceRepository get _maintenanceRepository => getIt<IMaintenanceRepository>();
+  IUserRepository get _userRepository => getIt<IUserRepository>();
 
   /// Get current user information with proper role formatting
   Future<Map<String, dynamic>> getCurrentUserInfo() async {

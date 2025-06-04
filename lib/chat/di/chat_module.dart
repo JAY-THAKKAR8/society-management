@@ -1,6 +1,7 @@
 import 'package:injectable/injectable.dart';
 import 'package:society_management/chat/repository/chat_repository.dart';
 import 'package:society_management/chat/service/ai_service.dart';
+import 'package:society_management/chat/service/gemini_service.dart';
 
 @module
 abstract class ChatModule {
@@ -8,5 +9,5 @@ abstract class ChatModule {
   IChatRepository get chatRepository => ChatRepository();
 
   @singleton
-  AIService get aiService => AIService();
+  AIService get aiService => GeminiService();
 }

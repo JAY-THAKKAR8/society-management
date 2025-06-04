@@ -26,7 +26,7 @@ class _GeminiApiTestPageState extends State<GeminiApiTestPage> {
   }
 
   void _checkApiKey() {
-    final apiKey = ApiKeys.geminiApiKey;
+    const apiKey = ApiKeys.geminiApiKey;
     if (apiKey.isEmpty || apiKey == 'your_gemini_api_key_here') {
       setState(() {
         _apiKeyStatus = 'API Key not configured properly';
@@ -99,9 +99,9 @@ class _GeminiApiTestPageState extends State<GeminiApiTestPage> {
                     const SizedBox(height: 8),
                     Text('API Key Status: $_apiKeyStatus'),
                     const SizedBox(height: 4),
-                    Text('API Endpoint: ${GeminiConfig.apiEndpoint}'),
+                    const Text('API Endpoint: ${GeminiConfig.apiEndpoint}'),
                     const SizedBox(height: 4),
-                    Text('Model: ${GeminiConfig.model}'),
+                    const Text('Model: ${GeminiConfig.model}'),
                   ],
                 ),
               ),

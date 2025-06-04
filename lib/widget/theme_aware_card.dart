@@ -35,17 +35,12 @@ class ThemeAwareCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Determine the appropriate color based on theme
-    final color = customColor ?? 
-        (useContainerColor 
-            ? ThemeUtils.getContainerColor(context) 
-            : ThemeUtils.getCardColor(context));
-    
+    final color =
+        customColor ?? (useContainerColor ? ThemeUtils.getContainerColor(context) : ThemeUtils.getCardColor(context));
+
     // Create border if specified
-    final effectiveBorder = border ?? 
-        (borderColor != null 
-            ? Border.all(color: borderColor!) 
-            : null);
-    
+    final effectiveBorder = border ?? (borderColor != null ? Border.all(color: borderColor!) : null);
+
     final cardContent = Container(
       width: width,
       height: height,
@@ -86,28 +81,20 @@ class ThemeAwareCard extends StatelessWidget {
 /// A card with a colored border based on status or role
 class StatusCard extends ThemeAwareCard {
   StatusCard({
-    required Widget child,
+    super.key,
+    required super.child,
     required BuildContext context,
     Color statusColor = Colors.blue,
     bool isActive = false,
-    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
-    EdgeInsetsGeometry margin = const EdgeInsets.only(bottom: 12),
-    BorderRadius? borderRadius,
-    double elevation = 1,
-    VoidCallback? onTap,
-    double? width,
-    double? height,
-    bool useContainerColor = true,
+    super.padding,
+    super.margin,
+    super.borderRadius,
+    super.elevation,
+    super.onTap,
+    super.width,
+    super.height,
+    super.useContainerColor = true,
   }) : super(
-          child: child,
-          padding: padding,
-          margin: margin,
-          borderRadius: borderRadius,
-          elevation: elevation,
-          onTap: onTap,
-          width: width,
-          height: height,
-          useContainerColor: useContainerColor,
           border: Border.all(
             color: isActive
                 ? statusColor.withOpacity(ThemeUtils.isDarkMode(context) ? 0.4 : 0.6)

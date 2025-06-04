@@ -105,13 +105,12 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
 
           // Calculate statistics from filtered expenses
           final stats = _calculateStatistics(filteredExpenses);
-          
+
           // Get monthly data
           final monthlyTotals = stats['monthly_totals'] as Map<String, dynamic>? ?? {};
-          
+
           // Sort months chronologically
-          final sortedMonths = monthlyTotals.entries.toList()
-            ..sort((a, b) => a.key.compareTo(b.key));
+          final sortedMonths = monthlyTotals.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
 
           setState(() {
             _statistics = stats;
@@ -144,14 +143,13 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
         final date = DateTime.parse(expense.createdAt!);
         final monthKey = '${date.year}-${date.month.toString().padLeft(2, '0')}';
         monthlyTotals[monthKey] = (monthlyTotals[monthKey] ?? 0) + amount;
-        
+
         // Category monthly totals
         final categoryName = expense.categoryName ?? 'Uncategorized';
         if (!categoryMonthlyTotals.containsKey(categoryName)) {
           categoryMonthlyTotals[categoryName] = {};
         }
-        categoryMonthlyTotals[categoryName]![monthKey] = 
-            (categoryMonthlyTotals[categoryName]![monthKey] ?? 0) + amount;
+        categoryMonthlyTotals[categoryName]![monthKey] = (categoryMonthlyTotals[categoryName]![monthKey] ?? 0) + amount;
       }
     }
 
@@ -352,9 +350,7 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
         const SizedBox(height: 16),
         SizedBox(
           height: 300,
-          child: _chartType == 'bar' 
-              ? _buildBarChart() 
-              : _buildLineChart(),
+          child: _chartType == 'bar' ? _buildBarChart() : _buildLineChart(),
         ),
       ],
     );
@@ -369,10 +365,10 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
         maxValue = value;
       }
     }
-    
+
     // Add 10% padding to max value
     maxValue = maxValue * 1.1;
-    
+
     final formatter = NumberFormat.compactCurrency(
       symbol: '₹',
       decimalDigits: 0,
@@ -382,15 +378,13 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
     return Container(
       padding: const EdgeInsets.only(top: 20, bottom: 30, left: 10, right: 10),
       decoration: BoxDecoration(
-        color: ThemeUtils.isDarkMode(context) 
-            ? Colors.grey.shade800.withOpacity(0.3) 
-            : Colors.grey.shade100,
+        color: ThemeUtils.isDarkMode(context) ? Colors.grey.shade800.withOpacity(0.3) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final barWidth = (constraints.maxWidth - 40) / _monthlyData.length - 10;
-          
+
           return Stack(
             children: [
               // Y-axis labels
@@ -416,7 +410,7 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                   ],
                 ),
               ),
-              
+
               // Horizontal grid lines
               ...List.generate(3, (index) {
                 final y = index * (constraints.maxHeight - 30) / 2;
@@ -426,13 +420,11 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                   right: 0,
                   child: Container(
                     height: 1,
-                    color: ThemeUtils.isDarkMode(context) 
-                        ? Colors.grey.withOpacity(0.2) 
-                        : Colors.grey.withOpacity(0.3),
+                    color: ThemeUtils.isDarkMode(context) ? Colors.grey.withOpacity(0.2) : Colors.grey.withOpacity(0.3),
                   ),
                 );
               }),
-              
+
               // Bars
               Positioned(
                 left: 40,
@@ -447,13 +439,13 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                     final amount = entry.value as double;
                     final percentage = maxValue > 0 ? amount / maxValue : 0;
                     final barHeight = (constraints.maxHeight - 30) * percentage;
-                    
+
                     // Parse month from format YYYY-MM
                     final parts = monthKey.split('-');
-                    final monthName = parts.length > 1 
-                        ? DateFormat('MMM').format(DateTime(int.parse(parts[0]), int.parse(parts[1]))) 
+                    final monthName = parts.length > 1
+                        ? DateFormat('MMM').format(DateTime(int.parse(parts[0]), int.parse(parts[1])))
                         : monthKey;
-                    
+
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -491,10 +483,10 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
         maxValue = value;
       }
     }
-    
+
     // Add 10% padding to max value
     maxValue = maxValue * 1.1;
-    
+
     final formatter = NumberFormat.compactCurrency(
       symbol: '₹',
       decimalDigits: 0,
@@ -504,9 +496,7 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
     return Container(
       padding: const EdgeInsets.only(top: 20, bottom: 30, left: 10, right: 10),
       decoration: BoxDecoration(
-        color: ThemeUtils.isDarkMode(context) 
-            ? Colors.grey.shade800.withOpacity(0.3) 
-            : Colors.grey.shade100,
+        color: ThemeUtils.isDarkMode(context) ? Colors.grey.shade800.withOpacity(0.3) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
       child: LayoutBuilder(
@@ -536,7 +526,7 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                   ],
                 ),
               ),
-              
+
               // Horizontal grid lines
               ...List.generate(3, (index) {
                 final y = index * (constraints.maxHeight - 30) / 2;
@@ -546,13 +536,11 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                   right: 0,
                   child: Container(
                     height: 1,
-                    color: ThemeUtils.isDarkMode(context) 
-                        ? Colors.grey.withOpacity(0.2) 
-                        : Colors.grey.withOpacity(0.3),
+                    color: ThemeUtils.isDarkMode(context) ? Colors.grey.withOpacity(0.2) : Colors.grey.withOpacity(0.3),
                   ),
                 );
               }),
-              
+
               // Line chart
               Positioned(
                 left: 40,
@@ -568,7 +556,7 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                   ),
                 ),
               ),
-              
+
               // X-axis labels
               Positioned(
                 left: 40,
@@ -579,13 +567,13 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: _monthlyData.map((entry) {
                     final monthKey = entry.key;
-                    
+
                     // Parse month from format YYYY-MM
                     final parts = monthKey.split('-');
-                    final monthName = parts.length > 1 
-                        ? DateFormat('MMM').format(DateTime(int.parse(parts[0]), int.parse(parts[1]))) 
+                    final monthName = parts.length > 1
+                        ? DateFormat('MMM').format(DateTime(int.parse(parts[0]), int.parse(parts[1])))
                         : monthKey;
-                    
+
                     return Text(
                       monthName,
                       style: Theme.of(context).textTheme.bodySmall,
@@ -625,9 +613,7 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: ThemeUtils.isDarkMode(context) 
-                ? Colors.grey.shade800.withOpacity(0.3) 
-                : Colors.grey.shade100,
+            color: ThemeUtils.isDarkMode(context) ? Colors.grey.shade800.withOpacity(0.3) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -675,11 +661,11 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                 final monthKey = entry.key;
                 final amount = entry.value as double;
                 final percentage = totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
-                
+
                 // Parse month from format YYYY-MM
                 final parts = monthKey.split('-');
-                final monthName = parts.length > 1 
-                    ? DateFormat('MMMM yyyy').format(DateTime(int.parse(parts[0]), int.parse(parts[1]))) 
+                final monthName = parts.length > 1
+                    ? DateFormat('MMMM yyyy').format(DateTime(int.parse(parts[0]), int.parse(parts[1])))
                     : monthKey;
 
                 return Column(
@@ -717,7 +703,7 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
                     const Divider(height: 1),
                   ],
                 );
-              }).toList(),
+              }),
               // Total row
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -779,32 +765,32 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
     double minAmount = double.infinity;
     String maxMonth = '';
     String minMonth = '';
-    
+
     for (final entry in _monthlyData) {
       final amount = entry.value as double;
       totalAmount += amount;
-      
+
       if (amount > maxAmount) {
         maxAmount = amount;
         maxMonth = entry.key;
       }
-      
+
       if (amount < minAmount) {
         minAmount = amount;
         minMonth = entry.key;
       }
     }
-    
+
     final avgAmount = _monthlyData.isNotEmpty ? totalAmount / _monthlyData.length : 0;
-    
+
     // Format month names
     String formatMonthName(String monthKey) {
       final parts = monthKey.split('-');
-      return parts.length > 1 
-          ? DateFormat('MMMM yyyy').format(DateTime(int.parse(parts[0]), int.parse(parts[1]))) 
+      return parts.length > 1
+          ? DateFormat('MMMM yyyy').format(DateTime(int.parse(parts[0]), int.parse(parts[1])))
           : monthKey;
     }
-    
+
     final maxMonthName = formatMonthName(maxMonth);
     final minMonthName = formatMonthName(minMonth);
 
@@ -821,36 +807,34 @@ class _MonthlyTrendPageState extends State<MonthlyTrendPage> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: ThemeUtils.isDarkMode(context) 
-                ? Colors.grey.shade800.withOpacity(0.3) 
-                : Colors.grey.shade100,
+            color: ThemeUtils.isDarkMode(context) ? Colors.grey.shade800.withOpacity(0.3) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             children: [
               _buildStatItem(
-                'Average Monthly Expense', 
+                'Average Monthly Expense',
                 formatter.format(avgAmount),
                 Icons.calculate,
                 Colors.blue,
               ),
               const Divider(),
               _buildStatItem(
-                'Highest Expense Month', 
+                'Highest Expense Month',
                 '$maxMonthName (${formatter.format(maxAmount)})',
                 Icons.arrow_upward,
                 Colors.red,
               ),
               const Divider(),
               _buildStatItem(
-                'Lowest Expense Month', 
+                'Lowest Expense Month',
                 '$minMonthName (${formatter.format(minAmount)})',
                 Icons.arrow_downward,
                 Colors.green,
               ),
               const Divider(),
               _buildStatItem(
-                'Total Months', 
+                'Total Months',
                 '${_monthlyData.length}',
                 Icons.calendar_month,
                 Colors.purple,
@@ -907,45 +891,45 @@ class LineChartPainter extends CustomPainter {
   final List<MapEntry<String, dynamic>> data;
   final double maxValue;
   final Color color;
-  
+
   LineChartPainter({
     required this.data,
     required this.maxValue,
     required this.color,
   });
-  
+
   @override
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
-    
+
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
-    
+
     final dotPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
-    
+
     final path = Path();
-    
+
     for (int i = 0; i < data.length; i++) {
       final x = i * (size.width / (data.length - 1));
       final y = size.height - (data[i].value as double) / maxValue * size.height;
-      
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {
         path.lineTo(x, y);
       }
-      
+
       // Draw dots at data points
       canvas.drawCircle(Offset(x, y), 4, dotPaint);
     }
-    
+
     canvas.drawPath(path, paint);
   }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
