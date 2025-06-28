@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/chat/view/chat_page.dart';
-import 'package:society_management/chat/view/society_insights_page.dart';
 import 'package:society_management/complaints/view/add_complaint_page.dart';
 import 'package:society_management/complaints/view/my_complaints_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
-import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/line_head/dashboard/view/fixed_line_head_dashboard.dart';
 import 'package:society_management/line_member/dashboard/view/improved_line_member_quick_actions.dart';
@@ -23,6 +21,41 @@ import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_gradient_card.dart';
 import 'package:society_management/widget/kdv_logo.dart';
 
+// Data model for dashboard state
+class LineMemberDashboardState {
+  final UserModel? currentUser;
+  final List<UserModel> lineMembers;
+  final bool isLoading;
+  final String? errorMessage;
+
+  const LineMemberDashboardState({
+    this.currentUser,
+    this.lineMembers = const [],
+    this.isLoading = true,
+    this.errorMessage,
+  });
+
+  LineMemberDashboardState copyWith({
+    UserModel? currentUser,
+    List<UserModel>? lineMembers,
+    bool? isLoading,
+    String? errorMessage,
+  }) {
+    return LineMemberDashboardState(
+      currentUser: currentUser ?? this.currentUser,
+      lineMembers: lineMembers ?? this.lineMembers,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage,
+    );
+  }
+}
+
+/// Improved Line Member Dashboard with ValueNotifier for better performance
+/// Features:
+/// - No setState usage - uses ValueNotifier to prevent unnecessary rebuilds
+/// - Comprehensive error handling and loading states
+/// - Role-based access control
+/// - Smooth animations and transitions
 class ImprovedLineMemberDashboard extends StatefulWidget {
   const ImprovedLineMemberDashboard({super.key});
 
@@ -32,9 +65,7 @@ class ImprovedLineMemberDashboard extends StatefulWidget {
 
 class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboard> with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
-  UserModel? _currentUser;
-  bool _isLoading = true;
-  List<UserModel> _lineMembers = [];
+  late final ValueNotifier<LineMemberDashboardState> _dashboardNotifier;
 
   // Animation controllers
   late AnimationController _animationController;
@@ -43,6 +74,9 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
   @override
   void initState() {
     super.initState();
+
+    // Initialize dashboard state
+    _dashboardNotifier = ValueNotifier(const LineMemberDashboardState());
 
     // Initialize animations
     _animationController = AnimationController(
@@ -63,6 +97,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
   @override
   void dispose() {
     _animationController.dispose();
+    _dashboardNotifier.dispose();
     super.dispose();
   }
 
@@ -72,15 +107,20 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
       if (user != null) {
         // Verify this is a line member or line head + member
         if (!user.isLineMember) {
+          _dashboardNotifier.value = _dashboardNotifier.value.copyWith(
+            isLoading: false,
+            errorMessage: 'Access denied: Not a line member',
+          );
           Utility.toast(message: 'Access denied: Not a line member');
           await _logout();
           return;
         }
 
-        setState(() {
-          _currentUser = user;
-          _isLoading = false;
-        });
+        _dashboardNotifier.value = _dashboardNotifier.value.copyWith(
+          currentUser: user,
+          isLoading: false,
+          errorMessage: null,
+        );
 
         // Start animations
         _animationController.forward();
@@ -90,17 +130,18 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
           _fetchLineMembers(user.lineNumber!);
         }
       } else {
-        setState(() {
-          _isLoading = false;
-        });
+        _dashboardNotifier.value = _dashboardNotifier.value.copyWith(
+          isLoading: false,
+          errorMessage: 'Failed to get user data',
+        );
         Utility.toast(message: 'Failed to get user data');
-        // If we can't get user data, log out and go to login page
         await _logout();
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      _dashboardNotifier.value = _dashboardNotifier.value.copyWith(
+        isLoading: false,
+        errorMessage: 'Error loading user data: $e',
+      );
       Utility.toast(message: 'Error: $e');
     }
   }
@@ -123,44 +164,46 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
 
       result.fold(
         (failure) {
+          _dashboardNotifier.value = _dashboardNotifier.value.copyWith(
+            errorMessage: 'Error fetching line members: ${failure.message}',
+          );
           Utility.toast(message: failure.message);
         },
         (users) {
-          // Filter users by line number
+          final currentUser = _dashboardNotifier.value.currentUser;
           final filteredUsers =
-              users.where((user) => user.lineNumber == lineNumber && user.id != _currentUser?.id).toList();
+              users.where((user) => user.lineNumber == lineNumber && user.id != currentUser?.id).toList();
 
-          setState(() {
-            _lineMembers = filteredUsers;
-          });
+          _dashboardNotifier.value = _dashboardNotifier.value.copyWith(
+            lineMembers: filteredUsers,
+            errorMessage: null,
+          );
         },
       );
     } catch (e) {
+      _dashboardNotifier.value = _dashboardNotifier.value.copyWith(
+        errorMessage: 'Error fetching line members: $e',
+      );
       Utility.toast(message: 'Error fetching line members: $e');
     }
   }
 
-  // Switch to line head view for LINE_HEAD_MEMBER users
   void _switchToLineHeadView() {
-    if (_currentUser?.role == AppConstants.lineHeadAndMember) {
-      // Show a confirmation dialog
+    final currentUser = _dashboardNotifier.value.currentUser;
+    if (currentUser?.role == AppConstants.lineHeadAndMember) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Switch to Line Head View'),
-          content: const Text(
-              'You are about to switch to your line head dashboard where you can manage maintenance collections and other line head responsibilities.'),
+          content: const Text('Do you want to switch to the Line Head dashboard?'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                // Navigate to line head dashboard
+                Navigator.of(context).pop();
                 context.pushAndRemoveUntil(const ImprovedLineHeadDashboard());
               },
               child: const Text('Switch'),
@@ -172,8 +215,9 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
   }
 
   Future<void> _refreshDashboard() async {
-    if (_currentUser?.lineNumber != null) {
-      _fetchLineMembers(_currentUser!.lineNumber!);
+    final currentUser = _dashboardNotifier.value.currentUser;
+    if (currentUser?.lineNumber != null) {
+      _fetchLineMembers(currentUser!.lineNumber!);
     }
   }
 
@@ -181,202 +225,178 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
   Widget build(BuildContext context) {
     final isDarkMode = ThemeUtils.isDarkMode(context);
 
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push(const ChatPage());
-        },
-        backgroundColor: AppColors.primaryBlue,
-        tooltip: 'AI Assistant',
-        child: const Icon(Icons.chat, color: Colors.white),
-      ),
-      body: RepaintBoundary(
-        key: ScreenshotUtility.screenshotKey,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: isDarkMode
-                  ? [AppColors.darkBackground, const Color(0xFF121428)] // Dark background with blue tint
-                  : AppColors.gradientPurplePink,
+    return ValueListenableBuilder<LineMemberDashboardState>(
+      valueListenable: _dashboardNotifier,
+      builder: (context, state, child) {
+        return Scaffold(
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => context.push(const ChatPage()),
+            backgroundColor: AppColors.primaryBlue,
+            tooltip: 'AI Assistant',
+            child: const Icon(Icons.chat, color: Colors.white),
+          ),
+          body: RepaintBoundary(
+            key: ScreenshotUtility.screenshotKey,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors:
+                      isDarkMode ? [AppColors.darkBackground, const Color(0xFF121428)] : AppColors.gradientPurplePink,
+                ),
+              ),
+              child: SafeArea(
+                child: RefreshIndicator(
+                  onRefresh: _refreshDashboard,
+                  child: state.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : state.errorMessage != null
+                          ? _buildErrorState(state.errorMessage!)
+                          : _buildDashboardContent(state),
+                ),
+              ),
             ),
           ),
-          child: SafeArea(
-            child: RefreshIndicator(
-              onRefresh: _refreshDashboard,
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : CustomScrollView(
-                      slivers: [
-                        // App Bar
-                        SliverAppBar(
-                          backgroundColor: Colors.transparent,
-                          floating: true,
-                          elevation: 0,
-                          title: const Row(
-                            children: [
-                              KDVLogo(
-                                size: 40,
-                                primaryColor: AppColors.primaryPurple,
-                                secondaryColor: Colors.white,
-                              ),
-                              SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'KDV Management',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Member Dashboard',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xB3FFFFFF), // 70% opacity of white
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            // Show switch to line head view button only for LINE_HEAD_MEMBER users
-                            if (_currentUser?.role == AppConstants.lineHeadAndMember)
-                              IconButton(
-                                icon: const Icon(Icons.switch_account, color: Colors.white),
-                                onPressed: _switchToLineHeadView,
-                                tooltip: 'Switch to Line Head View',
-                              ),
-                            // More menu with additional options
-                            PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert, color: Colors.white),
-                              tooltip: 'More options',
-                              onSelected: (value) {
-                                switch (value) {
-                                  case 'expense':
-                                    context.push(const ExpenseDashboardPage());
-                                    break;
-                                  case 'screenshot':
-                                    ScreenshotUtility.takeAndShareScreenshot(context);
-                                    break;
-                                  case 'insights':
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => const SocietyInsightsPage(),
-                                      ),
-                                    );
-                                    break;
-                                  case 'settings':
-                                    context.push(const CommonSettingsPage());
-                                    break;
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem<String>(
-                                  value: 'expense',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.bar_chart),
-                                      SizedBox(width: 12),
-                                      Text('Expense Dashboard'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem<String>(
-                                  value: 'screenshot',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.camera_alt),
-                                      SizedBox(width: 12),
-                                      Text('Take Screenshot'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem<String>(
-                                  value: 'insights',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.insights),
-                                      SizedBox(width: 12),
-                                      Text('Society Insights (AI)'),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem<String>(
-                                  value: 'settings',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.settings),
-                                      SizedBox(width: 12),
-                                      Text('Settings'),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+        );
+      },
+    );
+  }
 
-                        // Dashboard Content
-                        SliverToBoxAdapter(
-                          child: FadeTransition(
-                            opacity: _fadeAnimation,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Welcome message
-                                  _buildWelcomeSection(),
-                                  const SizedBox(height: 24),
-
-                                  // Summary cards
-                                  ImprovedLineMemberSummarySection(
-                                    lineNumber: _currentUser?.lineNumber,
-                                  ),
-                                  const SizedBox(height: 32),
-
-                                  // Quick actions
-                                  ImprovedLineMemberQuickActions(
-                                    onAddComplaint: () {
-                                      context.push(const AddComplaintPage());
-                                    },
-                                    onViewComplaints: () {
-                                      context.push(const MyComplaintsPage());
-                                    },
-                                    onViewMaintenanceStatus: () {
-                                      context.push(const MyMaintenanceStatusPage());
-                                    },
-                                  ),
-                                  const SizedBox(height: 24),
-
-                                  // Line member specific content
-                                  _buildLineInfo(),
-                                  const SizedBox(height: 24),
-
-                                  // Line members list
-                                  _buildLineMembersList(),
-                                  const SizedBox(height: 100), // Extra space at bottom
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+  Widget _buildErrorState(String errorMessage) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red.withValues(alpha: 0.6),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error Loading Dashboard',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              errorMessage,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-        ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _getCurrentUser,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildWelcomeSection() {
+  Widget _buildDashboardContent(LineMemberDashboardState state) {
+    return CustomScrollView(
+      slivers: [
+        // App Bar
+        SliverAppBar(
+          backgroundColor: Colors.transparent,
+          floating: true,
+          elevation: 0,
+          title: const Row(
+            children: [
+              KDVLogo(
+                size: 40,
+                primaryColor: AppColors.primaryPurple,
+                secondaryColor: Colors.white,
+              ),
+              SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'KDV Management',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Member Dashboard',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xB3FFFFFF),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            // Show switch button only for LINE_HEAD_MEMBER users
+            if (state.currentUser?.role == AppConstants.lineHeadAndMember)
+              IconButton(
+                icon: const Icon(Icons.switch_account, color: Colors.white),
+                onPressed: _switchToLineHeadView,
+                tooltip: 'Switch to Line Head View',
+              ),
+            IconButton(
+              icon: const Icon(Icons.settings, color: Colors.white),
+              onPressed: () => context.push(const CommonSettingsPage()),
+            ),
+          ],
+        ),
+
+        // Dashboard Content
+        SliverToBoxAdapter(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome message
+                  _buildWelcomeSection(state.currentUser),
+                  const SizedBox(height: 24),
+
+                  // Summary cards
+                  ImprovedLineMemberSummarySection(
+                    lineNumber: state.currentUser?.lineNumber,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Quick actions
+                  ImprovedLineMemberQuickActions(
+                    onAddComplaint: () => context.push(const AddComplaintPage()),
+                    onViewComplaints: () => context.push(const MyComplaintsPage()),
+                    onViewMaintenanceStatus: () => context.push(const MyMaintenanceStatusPage()),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Line info
+                  _buildLineInfo(state.currentUser),
+                  const SizedBox(height: 24),
+
+                  // Line members list
+                  _buildLineMembersList(state.lineMembers),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWelcomeSection(UserModel? currentUser) {
     final isDarkMode = ThemeUtils.isDarkMode(context);
 
     return CommonGradientCard(
@@ -389,7 +409,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome, ${_currentUser?.name ?? 'Member'}!',
+                  'Welcome, ${currentUser?.name ?? 'Member'}!',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
@@ -412,7 +432,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
           Container(
             padding: const EdgeInsets.all(12),
             decoration: const BoxDecoration(
-              color: Color(0x4DFFFFFF), // 30% opacity of white
+              color: Color(0x4DFFFFFF),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -426,13 +446,11 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
     );
   }
 
-  Widget _buildLineInfo() {
+  Widget _buildLineInfo(UserModel? currentUser) {
     final isDarkMode = ThemeUtils.isDarkMode(context);
 
     return CommonGradientCard(
-      gradientColors: isDarkMode
-          ? [const Color(0xB36A11CB), const Color(0xB3C850C0)] // 70% opacity of primaryPurple and primaryPink
-          : AppColors.gradientLightPurple,
+      gradientColors: isDarkMode ? [const Color(0xB36A11CB), const Color(0xB3C850C0)] : AppColors.gradientLightPurple,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -445,10 +463,9 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
             ),
           ),
           const SizedBox(height: 16),
-          _buildInfoRow("Line", _currentUser?.userLineViewString ?? "Not assigned"),
-          _buildInfoRow("Role", _currentUser?.userRoleViewString ?? "Line member"),
-          if (_currentUser?.villNumber != null)
-            _buildInfoRow("Villa Number", _currentUser?.villNumber ?? "Not assigned"),
+          _buildInfoRow("Line", currentUser?.userLineViewString ?? "Not assigned"),
+          _buildInfoRow("Role", currentUser?.userRoleViewString ?? "Line member"),
+          if (currentUser?.villNumber != null) _buildInfoRow("Villa Number", currentUser?.villNumber ?? "Not assigned"),
         ],
       ),
     );
@@ -479,8 +496,8 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
     );
   }
 
-  Widget _buildLineMembersList() {
-    if (_lineMembers.isEmpty) {
+  Widget _buildLineMembersList(List<UserModel> lineMembers) {
+    if (lineMembers.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -488,7 +505,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x0D000000), // 5% opacity of black
+              color: Color(0x0D000000),
               blurRadius: 10,
               offset: Offset(0, 5),
             ),
@@ -522,7 +539,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0D000000), // 5% opacity of black
+            color: Color(0x0D000000),
             blurRadius: 10,
             offset: Offset(0, 5),
           ),
@@ -541,7 +558,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
                     ),
               ),
               Text(
-                "${_lineMembers.length} members",
+                "${lineMembers.length} members",
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: ThemeUtils.getTextColor(context, secondary: true),
                     ),
@@ -549,7 +566,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
             ],
           ),
           const SizedBox(height: 16),
-          ..._lineMembers.map((member) => _buildMemberItem(member)),
+          ...lineMembers.map((member) => _buildMemberItem(member)),
         ],
       ),
     );
@@ -569,11 +586,11 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
             decoration: BoxDecoration(
               color: isLineHead
                   ? isDarkMode
-                      ? const Color(0x3311998E) // 20% opacity of primaryGreen
-                      : const Color(0x1A11998E) // 10% opacity of primaryGreen
+                      ? const Color(0x3311998E)
+                      : const Color(0x1A11998E)
                   : isDarkMode
-                      ? const Color(0x336A11CB) // 20% opacity of primaryPurple
-                      : const Color(0x1A6A11CB), // 10% opacity of primaryPurple
+                      ? const Color(0x336A11CB)
+                      : const Color(0x1A6A11CB),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -613,9 +630,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: isDarkMode
-                    ? const Color(0x3311998E) // 20% opacity of primaryGreen
-                    : const Color(0x1A11998E), // 10% opacity of primaryGreen
+                color: isDarkMode ? const Color(0x3311998E) : const Color(0x1A11998E),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

@@ -9,6 +9,7 @@ import 'package:society_management/maintenance/model/maintenance_payment_model.d
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/service/late_fee_calculator.dart';
 import 'package:society_management/maintenance/service/receipt_service.dart';
+import 'package:society_management/notifications/service/notification_service.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -558,6 +559,8 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
             Utility.toast(message: failure.message);
           },
           (payment) async {
+            String periodName = 'Current Period';
+
             // Generate and share receipt
             try {
               // Get period details
@@ -570,6 +573,8 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
                           'Payment recorded successfully, but error getting period details for receipt: ${failure.message}');
                 },
                 (period) async {
+                  periodName = period.name ?? 'Current Period'; // Store period name for notification
+
                   try {
                     // Generate PDF receipt
                     final receiptFile = await ReceiptService.generateReceiptPDF(
@@ -589,6 +594,20 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
               );
             } catch (e) {
               Utility.toast(message: 'Payment recorded successfully, but error with receipt: $e');
+            }
+
+            // Send payment confirmation notification
+            try {
+              await NotificationService.sendPaymentConfirmationNotification(
+                userId: widget.payment.userId!,
+                userName: widget.payment.userName!,
+                amountPaid: maintenanceAmountPaid + lateFeeAmountPaid,
+                periodName: periodName,
+                receiptNumber: receiptController.text.trim().isNotEmpty ? receiptController.text.trim() : 'N/A',
+              );
+            } catch (e) {
+              // Don't fail payment recording if notification fails
+              debugPrint('Failed to send payment notification: $e');
             }
 
             isLoading.value = false;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/events/view/events_list_page.dart';
+import 'package:society_management/meetings/view/meeting_dashboard_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 
@@ -55,7 +56,7 @@ class ImprovedLineMemberQuickActions extends StatelessWidget {
         const SizedBox(height: 16),
         GridView.count(
           crossAxisCount: 2,
-          childAspectRatio: 1.0,
+          childAspectRatio: 0.9,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           shrinkWrap: true,
@@ -90,6 +91,18 @@ class ImprovedLineMemberQuickActions extends StatelessWidget {
                   ? [const Color(0xFF43A047), const Color(0xFF26A69A)] // gradientGreenTeal
                   : [const Color(0xFF10B981), const Color(0xFF34D399)], // lightGreen shades
               onTap: onViewMaintenanceStatus,
+            ),
+            _buildQuickActionCard(
+              context,
+              icon: Icons.groups,
+              title: "Line Meetings",
+              description: "View line meetings & agenda",
+              gradientColors: isDarkMode
+                  ? [const Color(0xFFFF6B6B), const Color(0xFFFFE66D)] // gradientRedYellow
+                  : [const Color(0xFFEF4444), const Color(0xFFFBBF24)], // lightRed to yellow
+              onTap: () {
+                context.push(const MeetingDashboardPage());
+              },
             ),
             _buildQuickActionCard(
               context,

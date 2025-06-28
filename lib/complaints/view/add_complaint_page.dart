@@ -8,6 +8,7 @@ import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/complaints/repository/i_complaint_repository.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/injector/injector.dart';
+import 'package:society_management/notifications/service/notification_service.dart';
 import 'package:society_management/users/model/user_model.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -157,10 +158,24 @@ class _AddComplaintPageState extends State<AddComplaintPage> {
             _isLoading.value = false;
             Utility.toast(message: failure.message);
           },
-          (_) {
+          (_) async {
+            // Send complaint submission notification
+            try {
+              await NotificationService.sendComplaintSubmittedNotification(
+                complaintTitle: _titleController.text.trim(),
+                submittedBy: _currentUser!.name ?? 'Unknown',
+                lineNumber: _currentUser!.userLineViewString,
+              );
+            } catch (e) {
+              // Don't fail complaint submission if notification fails
+              debugPrint('Failed to send complaint notification: $e');
+            }
+
             _isLoading.value = false;
             Utility.toast(message: 'Complaint submitted successfully');
-            context.pop();
+            if (mounted) {
+              context.pop();
+            }
           },
         );
       } catch (e) {

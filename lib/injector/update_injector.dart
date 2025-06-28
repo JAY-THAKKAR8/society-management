@@ -13,6 +13,8 @@ import 'package:society_management/events/service/event_service.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/maintenance/repository/maintenance_repository.dart';
+import 'package:society_management/meetings/repository/i_meeting_repository.dart';
+import 'package:society_management/meetings/repository/meeting_repository.dart';
 
 void updateInjector() {
   // Register the AuthService
@@ -40,6 +42,13 @@ void updateInjector() {
   if (!getIt.isRegistered<IDashboardStatsRepository>()) {
     getIt.registerFactory<IDashboardStatsRepository>(
       () => DashboardStatsRepository(getIt()),
+    );
+  }
+
+  // Register the meeting repository
+  if (!getIt.isRegistered<IMeetingRepository>()) {
+    getIt.registerFactory<IMeetingRepository>(
+      () => MeetingRepository(getIt()),
     );
   }
 

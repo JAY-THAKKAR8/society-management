@@ -4,6 +4,7 @@ import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/maintenance/view/improved_active_maintenance_stats_page.dart';
 import 'package:society_management/maintenance/view/line_member_maintenance_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
+import 'package:society_management/meetings/view/meeting_dashboard_page.dart';
 import 'package:society_management/reports/view/member_report_page.dart';
 import 'package:society_management/reports/view/payment_report_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
@@ -118,6 +119,20 @@ class ImprovedLineHeadQuickActions extends StatelessWidget {
                   : [const Color(0xFFF59E0B), const Color(0xFFFBBF24)], // lightAmber shades
               onTap: () async {
                 await context.push(const MaintenancePeriodsPage());
+                onActionComplete?.call();
+              },
+            ),
+
+            _buildQuickActionCard(
+              context,
+              icon: Icons.groups,
+              title: "Line Meetings",
+              description: "Manage line meetings",
+              gradientColors: isDarkMode
+                  ? [const Color(0xFFFF6B6B), const Color(0xFFFFE66D)] // gradientRedYellow
+                  : [const Color(0xFFEF4444), const Color(0xFFFBBF24)], // lightRed to yellow
+              onTap: () async {
+                await context.push(const MeetingDashboardPage());
                 onActionComplete?.call();
               },
             ),

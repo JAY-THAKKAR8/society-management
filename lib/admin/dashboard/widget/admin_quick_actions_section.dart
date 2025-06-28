@@ -3,6 +3,7 @@ import 'package:society_management/chat/view/chat_page.dart';
 import 'package:society_management/dashboard/widgets/improved_quick_action_button.dart';
 import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/maintenance/view/maintenance_periods_page.dart';
+import 'package:society_management/meetings/view/meeting_dashboard_page.dart';
 import 'package:society_management/reports/view/admin_reports_page.dart';
 import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/users/view/user_management_page.dart';
@@ -60,6 +61,17 @@ class AdminQuickActionsSection extends StatelessWidget {
               endColor: const Color(0xFF185A9D),
               onPressed: () {
                 context.push(const MaintenancePeriodsPage());
+              },
+            ),
+
+            // Meeting Management
+            ImprovedQuickActionButton(
+              label: "Meetings",
+              icon: Icons.groups,
+              startColor: const Color(0xFFFF6B6B),
+              endColor: const Color(0xFFFFE66D),
+              onPressed: () {
+                context.push(const MeetingDashboardPage());
               },
             ),
 

@@ -93,7 +93,7 @@ class LineHeadAlertDialog extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Collection Status Update',
+                          'Total Collection Status (All Periods)',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withValues(alpha: 0.8),
@@ -183,7 +183,7 @@ class LineHeadAlertDialog extends StatelessWidget {
                       const Icon(Icons.bar_chart, color: AppColors.primaryBlue, size: 18),
                       const SizedBox(width: 6),
                       const Text(
-                        'Collection Summary',
+                        'Total Collection Summary',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -231,7 +231,7 @@ class LineHeadAlertDialog extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _buildCompactAmountCard(
-                          'Collected',
+                          'Total Collected',
                           '₹${lineCollectedAmount.toStringAsFixed(0)}',
                           Colors.green,
                           Icons.check_circle,
@@ -240,7 +240,7 @@ class LineHeadAlertDialog extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildCompactAmountCard(
-                          'Pending',
+                          'Total Pending',
                           '₹${pendingAmount.toStringAsFixed(0)}',
                           Colors.red,
                           Icons.pending,

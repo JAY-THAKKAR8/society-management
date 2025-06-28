@@ -13,9 +13,9 @@ import 'package:society_management/line_head/dashboard/view/improved_line_head_s
 import 'package:society_management/line_head/dashboard/view/line_head_activity_section.dart';
 import 'package:society_management/line_head/dashboard/widget/line_head_alert_dialog.dart';
 import 'package:society_management/line_member/dashboard/view/fixed_line_member_dashboard.dart';
-import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
+import 'package:society_management/notifications/service/notification_service.dart';
 import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/users/model/user_model.dart';
@@ -34,7 +34,7 @@ class ImprovedLineHeadDashboard extends StatefulWidget {
 }
 
 class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> with SingleTickerProviderStateMixin {
-  // Keys to force refresh the dashboard widgets
+  // Keys to force refresh the dashboard widgets - using unique keys to prevent duplication
   final GlobalKey<ImprovedLineHeadSummarySectionState> _summaryKey = GlobalKey<ImprovedLineHeadSummarySectionState>();
   final GlobalKey<LineHeadActivitySectionState> _activityKey = GlobalKey<LineHeadActivitySectionState>();
 
@@ -119,15 +119,19 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
             return DateTime.parse(b.dueDate!).compareTo(DateTime.parse(a.dueDate!));
           });
 
-          // Find the most recent period with pending payments
-          MaintenancePeriodModel? periodWithPendingPayments;
-          int pendingCount = 0;
-          double pendingAmount = 0;
-          double collectedAmount = 0;
+          // Calculate total amounts across ALL periods
+          MaintenancePeriodModel? latestPeriod;
+          int totalPendingCount = 0;
+          double totalPendingAmount = 0;
+          double totalCollectedAmount = 0;
+          Set<String> uniquePendingUsers = {};
 
-          // For each active period, check if there are pending payments in this line
+          // For each active period, accumulate totals
           for (final period in periods) {
             if (period.id == null) continue;
+
+            // Keep track of the latest period for display
+            latestPeriod ??= period;
 
             debugPrint('🔍 Checking payments for period: ${period.name}, Line: ${_currentUser!.lineNumber}');
             final paymentsResult = await maintenanceRepository.getPaymentsForLine(
@@ -142,69 +146,74 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
               },
               (payments) {
                 debugPrint('💰 Found ${payments.length} payments for this period');
-                // Count pending payments
-                final pendingPayments = payments
-                    .where((payment) =>
-                        payment.status == PaymentStatus.pending ||
-                        payment.status == PaymentStatus.overdue ||
-                        payment.status == PaymentStatus.partiallyPaid)
-                    .toList();
 
-                debugPrint('⏳ Found ${pendingPayments.length} pending payments');
-                if (pendingPayments.isNotEmpty) {
-                  // Calculate total pending amount and collected amount for this line
-                  double currentPendingAmount = 0;
-                  double currentCollectedAmount = 0;
+                // Calculate amounts for this period and add to totals
+                for (final payment in payments) {
+                  if (payment.amount != null) {
+                    // Add to total collected amount
+                    totalCollectedAmount += payment.amountPaid;
 
-                  for (final payment in payments) {
-                    if (payment.amount != null) {
-                      currentCollectedAmount += payment.amountPaid;
-                      final remainingAmount = payment.amount! - payment.amountPaid;
-                      if (remainingAmount > 0) {
-                        currentPendingAmount += remainingAmount;
+                    // Calculate remaining amount
+                    final remainingAmount = payment.amount! - payment.amountPaid;
+                    if (remainingAmount > 0) {
+                      totalPendingAmount += remainingAmount;
+                      // Track unique users with pending payments
+                      if (payment.userId != null) {
+                        uniquePendingUsers.add(payment.userId!);
                       }
                     }
-                  }
-
-                  // If this is the first period with pending payments or it's more recent
-                  if (periodWithPendingPayments == null) {
-                    periodWithPendingPayments = period;
-                    pendingCount = pendingPayments.length;
-                    pendingAmount = currentPendingAmount;
-                    collectedAmount = currentCollectedAmount;
                   }
                 }
               },
             );
           }
 
-          // Show alert dialog if there are pending payments
-          debugPrint(
-              '🚨 Final check: periodWithPendingPayments = ${periodWithPendingPayments?.name}, mounted = $mounted');
-          debugPrint('📊 Pending count: $pendingCount, Pending amount: ₹$pendingAmount');
+          // Set final counts - use latest period for display but show total amounts
+          totalPendingCount = uniquePendingUsers.length;
 
-          if (periodWithPendingPayments != null && mounted) {
-            debugPrint('✅ Showing Line Head Alert Dialog');
+          // Show alert dialog if there are pending payments or collected amounts
+          debugPrint('🚨 Final check: latestPeriod = ${latestPeriod?.name}, mounted = $mounted');
+          debugPrint('📊 Total Pending count: $totalPendingCount, Total Pending amount: ₹$totalPendingAmount');
+          debugPrint('💰 Total Collected amount: ₹$totalCollectedAmount');
+
+          if ((totalPendingAmount > 0 || totalCollectedAmount > 0) && latestPeriod != null && mounted) {
+            debugPrint('✅ Showing Line Head Alert Dialog with TOTAL amounts');
+
+            // Send collection alert notification if there are pending amounts
+            if (totalPendingAmount > 0) {
+              try {
+                await NotificationService.sendLineHeadCollectionAlert(
+                  lineHeadUserId: _currentUser!.id!,
+                  lineNumber: _currentUser!.lineNumber!,
+                  pendingCount: totalPendingCount,
+                  pendingAmount: totalPendingAmount,
+                  periodName: latestPeriod.name ?? 'Current Period',
+                );
+              } catch (e) {
+                debugPrint('Failed to send line head collection alert: $e');
+              }
+            }
+
             // Add small delay to ensure UI is fully loaded
             Future.delayed(const Duration(milliseconds: 500), () {
               if (mounted) {
-                // Always show for line heads, especially for those with "Line head + Member" role
+                // Show dialog with total amounts across all periods
                 showDialog(
                   context: context,
                   barrierDismissible: false, // User must interact with the dialog
                   builder: (context) => LineHeadAlertDialog(
-                    period: periodWithPendingPayments!, // Use ! to assert non-null
+                    period: latestPeriod!, // Use latest period for display
                     lineNumber: _currentUser!.lineNumber!,
-                    pendingCount: pendingCount,
-                    pendingAmount: pendingAmount,
-                    collectedAmount: collectedAmount,
+                    pendingCount: totalPendingCount, // Total pending users
+                    pendingAmount: totalPendingAmount, // Total pending amount
+                    collectedAmount: totalCollectedAmount, // Total collected amount
                   ),
                 );
               }
             });
           } else {
             debugPrint(
-                '❌ Alert dialog NOT shown - periodWithPendingPayments: ${periodWithPendingPayments?.name}, mounted: $mounted');
+                '❌ Alert dialog NOT shown - latestPeriod: ${latestPeriod?.name}, totalPending: ₹$totalPendingAmount, mounted: $mounted');
           }
         },
       );

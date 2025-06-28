@@ -40,6 +40,10 @@ import 'package:society_management/maintenance/repository/i_maintenance_reposito
     as _i100;
 import 'package:society_management/maintenance/repository/maintenance_repository.dart'
     as _i10;
+import 'package:society_management/meetings/repository/i_meeting_repository.dart'
+    as _i786;
+import 'package:society_management/meetings/repository/meeting_repository.dart'
+    as _i994;
 import 'package:society_management/users/repository/i_user_repository.dart'
     as _i816;
 import 'package:society_management/users/repository/user_repository.dart'
@@ -89,6 +93,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i849.ComplaintRepository(gh<_i974.FirebaseFirestore>()));
     gh.factory<_i272.IDashboardStatsRepository>(
         () => _i522.DashboardStatsRepository(gh<_i974.FirebaseFirestore>()));
+    gh.factory<_i786.IMeetingRepository>(
+        () => _i994.MeetingRepository(gh<_i974.FirebaseFirestore>()));
     return this;
   }
 }
