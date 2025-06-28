@@ -1,3 +1,4 @@
+import 'package:society_management/broadcasting/model/broadcast_model.dart';
 import 'package:society_management/utility/firebase_messaging_service.dart';
 
 /// Service to handle different types of notifications in the society management app
@@ -326,6 +327,219 @@ class NotificationService {
         body: body,
         data: data,
       );
+    }
+  }
+
+  /// Send announcement notification
+  static Future<void> sendAnnouncementNotification({
+    required String title,
+    required String message,
+    required String sentBy,
+    required BroadcastTarget target,
+    String? targetLineNumber,
+  }) async {
+    final data = {
+      'type': 'announcement',
+      'title': title,
+      'message': message,
+      'sent_by': sentBy,
+      'target': target.name,
+      'target_line': targetLineNumber ?? 'all',
+    };
+
+    // Show local notification immediately
+    await FirebaseMessagingService.showLocalNotification(
+      title: title,
+      body: message,
+      data: data,
+    );
+
+    // Send based on target
+    switch (target) {
+      case BroadcastTarget.all:
+        await FirebaseMessagingService.sendNotificationToAll(
+          title: title,
+          body: message,
+          data: data,
+        );
+        break;
+      case BroadcastTarget.line:
+        if (targetLineNumber != null) {
+          await FirebaseMessagingService.sendNotificationToLine(
+            lineNumber: targetLineNumber,
+            title: title,
+            body: message,
+            data: data,
+          );
+        }
+        break;
+      default:
+        await FirebaseMessagingService.sendNotificationToAll(
+          title: title,
+          body: message,
+          data: data,
+        );
+    }
+  }
+
+  /// Send maintenance announcement notification
+  static Future<void> sendMaintenanceAnnouncementNotification({
+    required String title,
+    required String message,
+    required String sentBy,
+  }) async {
+    final data = {
+      'type': 'maintenance_announcement',
+      'title': title,
+      'message': message,
+      'sent_by': sentBy,
+    };
+
+    // Show local notification immediately
+    await FirebaseMessagingService.showLocalNotification(
+      title: title,
+      body: message,
+      data: data,
+    );
+
+    await FirebaseMessagingService.sendNotificationToAll(
+      title: title,
+      body: message,
+      data: data,
+    );
+  }
+
+  /// Send event announcement notification
+  static Future<void> sendEventAnnouncementNotification({
+    required String title,
+    required String message,
+    required String sentBy,
+    required BroadcastTarget target,
+    String? targetLineNumber,
+  }) async {
+    final data = {
+      'type': 'event_announcement',
+      'title': title,
+      'message': message,
+      'sent_by': sentBy,
+      'target': target.name,
+      'target_line': targetLineNumber ?? 'all',
+    };
+
+    // Show local notification immediately
+    await FirebaseMessagingService.showLocalNotification(
+      title: title,
+      body: message,
+      data: data,
+    );
+
+    // Send based on target
+    switch (target) {
+      case BroadcastTarget.all:
+        await FirebaseMessagingService.sendNotificationToAll(
+          title: title,
+          body: message,
+          data: data,
+        );
+        break;
+      case BroadcastTarget.line:
+        if (targetLineNumber != null) {
+          await FirebaseMessagingService.sendNotificationToLine(
+            lineNumber: targetLineNumber,
+            title: title,
+            body: message,
+            data: data,
+          );
+        }
+        break;
+      default:
+        await FirebaseMessagingService.sendNotificationToAll(
+          title: title,
+          body: message,
+          data: data,
+        );
+    }
+  }
+
+  /// Send reminder notification
+  static Future<void> sendReminderNotification({
+    required String title,
+    required String message,
+    required String sentBy,
+  }) async {
+    final data = {
+      'type': 'reminder',
+      'title': title,
+      'message': message,
+      'sent_by': sentBy,
+    };
+
+    // Show local notification immediately
+    await FirebaseMessagingService.showLocalNotification(
+      title: title,
+      body: message,
+      data: data,
+    );
+
+    await FirebaseMessagingService.sendNotificationToAll(
+      title: title,
+      body: message,
+      data: data,
+    );
+  }
+
+  /// Send general notification
+  static Future<void> sendGeneralNotification({
+    required String title,
+    required String message,
+    required String sentBy,
+    required String type,
+    required String priority,
+    required BroadcastTarget target,
+    String? targetLineNumber,
+  }) async {
+    final data = {
+      'type': type,
+      'title': title,
+      'message': message,
+      'sent_by': sentBy,
+      'priority': priority,
+      'target': target.name,
+      'target_line': targetLineNumber ?? 'all',
+    };
+
+    // Show local notification immediately
+    await FirebaseMessagingService.showLocalNotification(
+      title: title,
+      body: message,
+      data: data,
+    );
+
+    // Send based on target
+    switch (target) {
+      case BroadcastTarget.all:
+        await FirebaseMessagingService.sendNotificationToAll(
+          title: title,
+          body: message,
+          data: data,
+        );
+        break;
+      case BroadcastTarget.line:
+        if (targetLineNumber != null) {
+          await FirebaseMessagingService.sendNotificationToLine(
+            lineNumber: targetLineNumber,
+            title: title,
+            body: message,
+            data: data,
+          );
+        }
+        break;
+      default:
+        await FirebaseMessagingService.sendNotificationToAll(
+          title: title,
+          body: message,
+          data: data,
+        );
     }
   }
 }

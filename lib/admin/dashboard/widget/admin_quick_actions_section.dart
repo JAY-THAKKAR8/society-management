@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:society_management/broadcasting/view/broadcast_dashboard_page.dart';
 import 'package:society_management/chat/view/chat_page.dart';
 import 'package:society_management/dashboard/widgets/improved_quick_action_button.dart';
 import 'package:society_management/expenses/view/expense_dashboard_page.dart';
@@ -99,6 +100,17 @@ class AdminQuickActionsSection extends StatelessWidget {
                     builder: (context) => const AdminReportsPage(),
                   ),
                 );
+              },
+            ),
+
+            // Broadcasting Center
+            ImprovedQuickActionButton(
+              label: "Broadcasting",
+              icon: Icons.campaign,
+              startColor: const Color(0xFF667eea),
+              endColor: const Color(0xFF764ba2),
+              onPressed: () {
+                context.push(const BroadcastDashboardPage());
               },
             ),
 

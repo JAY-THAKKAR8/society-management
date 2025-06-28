@@ -1,4 +1,7 @@
 import 'package:society_management/auth/service/auth_service.dart';
+import 'package:society_management/broadcasting/repository/broadcast_repository.dart';
+import 'package:society_management/broadcasting/repository/i_broadcast_repository.dart';
+import 'package:society_management/broadcasting/service/broadcast_service.dart';
 import 'package:society_management/chat/repository/chat_repository.dart';
 import 'package:society_management/chat/service/ai_service.dart';
 import 'package:society_management/chat/service/gemini_service.dart';
@@ -89,5 +92,19 @@ void updateInjector() {
         MockAIService(),
       );
     }
+  }
+
+  // Register the broadcast repository
+  if (!getIt.isRegistered<IBroadcastRepository>()) {
+    getIt.registerLazySingleton<IBroadcastRepository>(
+      () => BroadcastRepository(),
+    );
+  }
+
+  // Register the broadcast service
+  if (!getIt.isRegistered<BroadcastService>()) {
+    getIt.registerLazySingleton<BroadcastService>(
+      () => BroadcastService(getIt<IBroadcastRepository>()),
+    );
   }
 }
