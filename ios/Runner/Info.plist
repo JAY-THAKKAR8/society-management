@@ -49,5 +49,9 @@
 	<string>This app needs microphone access to enable voice chat features</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>This app needs speech recognition to convert your voice to text</string>
+
+	<!-- AdMob App ID (Test App ID - Replace with your real App ID in production) -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 </dict>
 </plist>

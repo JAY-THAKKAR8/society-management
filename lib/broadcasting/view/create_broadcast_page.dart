@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:society_management/ads/service/ad_service.dart';
+import 'package:society_management/ads/widgets/ad_widgets.dart';
 import 'package:society_management/auth/service/auth_service.dart';
 import 'package:society_management/broadcasting/model/broadcast_model.dart';
 import 'package:society_management/broadcasting/repository/i_broadcast_repository.dart';
@@ -38,6 +40,7 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
   bool _isLoading = false;
   bool _sendImmediately = true;
   final List<String> _attachments = [];
+  bool _premiumTemplatesUnlocked = false;
 
   @override
   void initState() {
@@ -47,6 +50,8 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
       _selectedType = widget.initialType!;
       _setPriorityBasedOnType();
     }
+    // Preload ads for better user experience
+    AdService.instance.preloadAds();
   }
 
   void _setPriorityBasedOnType() {
@@ -455,6 +460,8 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
             const Gap(20),
             _buildTemplateSection(isDark),
             const Gap(20),
+            _buildPremiumTemplateSection(isDark),
+            const Gap(20),
             _buildAttachmentSection(isDark),
           ],
         ),
@@ -533,6 +540,21 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPremiumTemplateSection(bool isDark) {
+    return AdSupportedFeature(
+      featureName: '✨ Premium Templates',
+      description: 'Unlock professional broadcast templates with advanced formatting',
+      icon: Icons.star_rounded,
+      isUnlocked: _premiumTemplatesUnlocked,
+      onUnlock: () {
+        setState(() {
+          _premiumTemplatesUnlocked = true;
+        });
+        Utility.toast(message: '🎉 Premium templates unlocked! Thank you for watching the ad.');
+      },
     );
   }
 
@@ -845,7 +867,15 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
       }
 
       if (mounted) {
-        context.pop(true);
+        // Show interstitial ad after successful broadcast creation
+        InterstitialAdHelper.incrementActionCount();
+        InterstitialAdHelper.showAdIfNeeded(
+          onAdClosed: () => context.pop(true),
+        );
+
+        if (!InterstitialAdHelper.shouldShowAd()) {
+          context.pop(true);
+        }
       }
     } catch (e) {
       Utility.toast(message: 'Error creating broadcast: $e');

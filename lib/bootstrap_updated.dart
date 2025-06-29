@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:society_management/ads/service/ad_service.dart';
 import 'package:society_management/auth/repository/auth_repository.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/injector/update_injector.dart';
@@ -24,10 +25,19 @@ Future<void> bootstrap(Widget builder) async {
     // Manually register repositories that are not auto-generated
     updateInjector();
 
+    // Initialize AdMob
+    try {
+      await AdService.initialize();
+      log('AdMob initialized successfully');
+    } catch (e) {
+      log('Error initializing AdMob: $e');
+      // Continue with app initialization even if AdMob fails
+    }
+
     // Create default admin user if it doesn't exist
     final authRepository = AuthRepository();
     await authRepository.createDefaultAdminIfNotExists();
-    
+
     // Initialize maintenance background service
     try {
       MaintenanceBackgroundService().initialize();
@@ -36,7 +46,7 @@ Future<void> bootstrap(Widget builder) async {
       log('Error initializing maintenance background service: $e');
       // Continue with app initialization even if service initialization fails
     }
-    
+
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,

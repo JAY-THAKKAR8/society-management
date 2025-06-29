@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:society_management/ads/widgets/ad_widgets.dart';
 import 'package:society_management/broadcasting/model/broadcast_model.dart';
 import 'package:society_management/broadcasting/repository/i_broadcast_repository.dart';
 import 'package:society_management/broadcasting/service/broadcast_service.dart';
@@ -71,29 +72,31 @@ class _BroadcastDashboardPageState extends State<BroadcastDashboardPage> {
         ],
       ),
       floatingActionButton: _buildCreateBroadcastFAB(context),
-      body: _isLoading
-          ? _buildLoadingState(context)
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildWelcomeHeader(context),
-                    const Gap(20),
-                    _buildQuickStatsCards(context),
-                    const Gap(24),
-                    _buildQuickActionsGrid(context),
-                    const Gap(24),
-                    _buildFilterSection(context),
-                    const Gap(16),
-                    _buildBroadcastsList(context),
-                    const Gap(80), // Space for FAB
-                  ],
+      body: AdBannerContainer(
+        child: _isLoading
+            ? _buildLoadingState(context)
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWelcomeHeader(context),
+                      const Gap(20),
+                      _buildQuickStatsCards(context),
+                      const Gap(24),
+                      _buildQuickActionsGrid(context),
+                      const Gap(24),
+                      _buildFilterSection(context),
+                      const Gap(16),
+                      _buildBroadcastsList(context),
+                      const Gap(80), // Space for FAB
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 
@@ -175,9 +178,9 @@ class _BroadcastDashboardPageState extends State<BroadcastDashboardPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,7 +214,7 @@ class _BroadcastDashboardPageState extends State<BroadcastDashboardPage> {
             subtitle,
             style: TextStyle(
               fontSize: 10,
-              color: color.withOpacity(0.7),
+              color: color.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -293,9 +296,9 @@ class _BroadcastDashboardPageState extends State<BroadcastDashboardPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
@@ -381,7 +384,7 @@ class _BroadcastDashboardPageState extends State<BroadcastDashboardPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _getTypeColor(broadcast.type).withOpacity(0.1),
+                color: _getTypeColor(broadcast.type).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -431,7 +434,7 @@ class _BroadcastDashboardPageState extends State<BroadcastDashboardPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: _getStatusColor(broadcast.status).withOpacity(0.1),
+                color: _getStatusColor(broadcast.status).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(

@@ -57,6 +57,7 @@ dependencies:
   speech_to_text: ^6.6.0
   flutter_tts: ^3.8.5
   dartz: ^0.10.1
+  google_mobile_ads: ^5.1.0
 
 dev_dependencies:
   injectable_generator: 2.6.2
