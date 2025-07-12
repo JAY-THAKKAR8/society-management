@@ -32,6 +32,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
         // If stats don't exist, calculate and create them
         if (!statsDoc.exists) {
           final stats = await _calculateAdminDashboardStats();
+          print('Created new admin dashboard stats:1111 ${stats.totalExpenses}');
 
           // Create initial stats document
           await _adminDashboardCollection.doc('stats').set({
@@ -44,11 +45,14 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
             'updated_at': now,
           });
 
+          print('Created new admin dashboard stats:2222 ${stats.totalExpenses}');
+
           return stats;
         }
 
         // Update the stats with fresh calculations
         final updatedStats = await _calculateAdminDashboardStats();
+        print('Created new admin dashboard stats:3333 ${updatedStats.totalExpenses}');
 
         // Update the stats document
         await _adminDashboardCollection.doc('stats').update({
@@ -60,6 +64,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
           'fully_paid': updatedStats.fullyPaidUsers,
           'updated_at': now,
         });
+        print('Created new admin dashboard stats:4444 ${updatedStats.totalExpenses}');
 
         // Get the updated document
         final updatedStatsDoc = await _adminDashboardCollection.doc('stats').get();
@@ -128,7 +133,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
     double totalExpenses = 0.0;
 
     for (final doc in expensesSnapshot.docs) {
-      totalExpenses += (doc.data()['amount'] as num?)?.toDouble() ?? 0.0;
+      totalExpenses += (doc.data()['total_amount'] as num?)?.toDouble() ?? 0.0;
     }
 
     return DashboardStatsModel(

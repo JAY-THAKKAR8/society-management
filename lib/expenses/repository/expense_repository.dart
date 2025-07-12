@@ -120,25 +120,8 @@ class ExpenseRepository extends IExpenseRepository {
 
         await expenseDoc.set(expenseData);
 
-        // Update dashboard stats - increment total expenses
-        final statsRef = FirebaseFirestore.instance.dashboardStats.doc('stats');
-        final statsDoc = await statsRef.get();
-
-        if (!statsDoc.exists) {
-          // Create initial stats document if it doesn't exist
-          await statsRef.set({
-            'total_members': 0,
-            'total_expenses': totalAmount,
-            'updated_at': now,
-          });
-        } else {
-          // Increment total expenses amount
-          final currentAmount = (statsDoc.data()?['total_expenses'] as num?)?.toDouble() ?? 0.0;
-          await statsRef.update({
-            'total_expenses': currentAmount + totalAmount,
-            'updated_at': now,
-          });
-        }
+        // Update dashboard stats - increment total expenses in ALL dashboard collections
+        await _updateAllDashboardStats(totalAmount);
 
         // Log activity
         final activityDoc = FirebaseFirestore.instance.activities.doc();
@@ -404,5 +387,70 @@ class ExpenseRepository extends IExpenseRepository {
         };
       },
     );
+  }
+
+  // Update all dashboard stats collections when expense is added
+  Future<void> _updateAllDashboardStats(double amount) async {
+    try {
+      final now = Timestamp.now();
+
+      // Calculate total expenses from expenses collection
+      final expensesSnapshot = await FirebaseFirestore.instance.collection('expenses').get();
+      double totalExpenses = 0.0;
+
+      for (final doc in expensesSnapshot.docs) {
+        final data = doc.data();
+        // Try multiple field names that might contain the amount
+        final expenseAmount = (data['total_amount'] as num?)?.toDouble() ?? (data['amount'] as num?)?.toDouble() ?? 0.0;
+        totalExpenses += expenseAmount;
+      }
+
+      // Update admin dashboard stats
+      final adminStatsRef = FirebaseFirestore.instance.collection('admin_dashboard_stats').doc('stats');
+      final adminStatsDoc = await adminStatsRef.get();
+      print('Updated all dashboard stats with total expenses 1111: ₹$totalExpenses');
+
+      if (adminStatsDoc.exists) {
+        print('Updated all dashboard stats with total expenses 2222: ₹$totalExpenses');
+
+        await adminStatsRef.update({
+          'total_expenses': totalExpenses,
+          'updated_at': now,
+        });
+      } else {
+        // Create initial admin stats if doesn't exist
+        await adminStatsRef.set({
+          'total_members': 0,
+          'total_expenses': totalExpenses,
+          'maintenance_collected': 0.0,
+          'maintenance_pending': 0.0,
+          'active_maintenance': 0,
+          'fully_paid': 0,
+          'updated_at': now,
+        });
+      }
+
+      // Update line head dashboard stats for all lines
+      final lineStatsSnapshot = await FirebaseFirestore.instance.collection('line_head_dashboard_stats').get();
+      for (final doc in lineStatsSnapshot.docs) {
+        await doc.reference.update({
+          'total_expenses': totalExpenses,
+          'updated_at': now,
+        });
+      }
+
+      // Update user dashboard stats for all users
+      final userStatsSnapshot = await FirebaseFirestore.instance.collection('user_dashboard_stats').get();
+      for (final doc in userStatsSnapshot.docs) {
+        await doc.reference.update({
+          'total_expenses': totalExpenses,
+          'updated_at': now,
+        });
+      }
+
+      print('Updated all dashboard stats with total expenses: ₹$totalExpenses'); // Debug log
+    } catch (e) {
+      print('Error updating dashboard stats: $e');
+    }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:society_management/expenses/model/expense_item_model.dart';
 import 'package:society_management/expenses/model/expense_model.dart';
@@ -105,12 +106,192 @@ class _AddExpensePageState extends State<AddExpensePage> {
         isLoading.value = false;
         Utility.toast(message: failure.message);
       },
-      (expense) {
+      (expense) async {
         isLoading.value = false;
+
+        // Force refresh dashboard stats after adding expense
+        try {
+          // Calculate total from expenses collection and update all dashboards
+          await _refreshDashboardStats();
+        } catch (e) {
+          print('Error refreshing dashboard stats: $e');
+        }
+
         Utility.toast(message: 'Expense added successfully');
-        context.pop();
+        if (mounted) {
+          context.pop();
+        }
       },
     );
+  }
+
+  // Refresh dashboard stats after adding expense
+  Future<void> _refreshDashboardStats() async {
+    try {
+      // Import Firebase directly since we can't import the service
+      final firestore = FirebaseFirestore.instance;
+
+      // Calculate total expenses from expenses collection
+      final expensesSnapshot = await firestore.collection('expenses').get();
+      double totalExpenses = 0.0;
+
+      for (final doc in expensesSnapshot.docs) {
+        final data = doc.data();
+        // Try multiple field names that might contain the amount
+        final amount = (data['total_amount'] as num?)?.toDouble() ?? (data['amount'] as num?)?.toDouble() ?? 0.0;
+        totalExpenses += amount;
+      }
+
+      final now = Timestamp.fromDate(DateTime.now());
+
+      // Update admin dashboard stats
+      await firestore.collection('admin_dashboard_stats').doc('stats').update({
+        'total_expenses': totalExpenses,
+        'updated_at': now,
+      });
+
+      // Update line head dashboard stats for all lines
+      final lineStatsSnapshot = await firestore.collection('line_head_dashboard_stats').get();
+      for (final doc in lineStatsSnapshot.docs) {
+        await doc.reference.update({
+          'total_expenses': totalExpenses,
+          'updated_at': now,
+        });
+      }
+
+      // Update user dashboard stats for all users
+      final userStatsSnapshot = await firestore.collection('user_dashboard_stats').get();
+      for (final doc in userStatsSnapshot.docs) {
+        await doc.reference.update({
+          'total_expenses': totalExpenses,
+          'updated_at': now,
+        });
+      }
+
+      print('Dashboard stats refreshed with total: ₹$totalExpenses'); // Debug log
+    } catch (e) {
+      print('Error refreshing dashboard stats: $e');
+    }
+  }
+
+  // Debug method to check expenses and dashboard stats
+  Future<void> _debugExpensesAndDashboard() async {
+    try {
+      print('=== DEBUGGING EXPENSES & DASHBOARD ===');
+
+      final firestore = FirebaseFirestore.instance;
+
+      // 1. Check expenses collection
+      final expensesSnapshot = await firestore.collection('expenses').get();
+      print('📊 EXPENSES COLLECTION:');
+      print('Total expense documents: ${expensesSnapshot.docs.length}');
+
+      double totalFromExpenses = 0.0;
+      for (final doc in expensesSnapshot.docs) {
+        final data = doc.data();
+        final amount = (data['total_amount'] as num?)?.toDouble() ?? (data['amount'] as num?)?.toDouble() ?? 0.0;
+        totalFromExpenses += amount;
+
+        print(
+            '  - ${data['name'] ?? 'Unknown'}: ₹$amount (total_amount: ${data['total_amount']}, amount: ${data['amount']})');
+      }
+      print('📊 CALCULATED TOTAL FROM EXPENSES: ₹$totalFromExpenses');
+
+      // 2. Check admin dashboard stats
+      final adminStatsDoc = await firestore.collection('admin_dashboard_stats').doc('stats').get();
+      print('\n📈 ADMIN DASHBOARD STATS:');
+      print('Document exists: ${adminStatsDoc.exists}');
+
+      if (adminStatsDoc.exists) {
+        final data = adminStatsDoc.data()!;
+        print('  - total_expenses: ${data['total_expenses']}');
+        print('  - total_members: ${data['total_members']}');
+        print('  - updated_at: ${data['updated_at']}');
+      } else {
+        print('  - Admin dashboard stats document does not exist!');
+      }
+
+      // 3. Check line head dashboard stats
+      final lineStatsSnapshot = await firestore.collection('line_head_dashboard_stats').get();
+      print('\n📊 LINE HEAD DASHBOARD STATS:');
+      print('Total line stats documents: ${lineStatsSnapshot.docs.length}');
+
+      for (final doc in lineStatsSnapshot.docs) {
+        final data = doc.data();
+        print('  - Line ${doc.id}: total_expenses = ${data['total_expenses']}');
+      }
+
+      // 4. Check user dashboard stats
+      final userStatsSnapshot = await firestore.collection('user_dashboard_stats').get();
+      print('\n👥 USER DASHBOARD STATS:');
+      print('Total user stats documents: ${userStatsSnapshot.docs.length}');
+
+      for (final doc in userStatsSnapshot.docs) {
+        final data = doc.data();
+        print('  - User ${doc.id}: total_expenses = ${data['total_expenses']}');
+      }
+
+      print('\n=== DEBUG COMPLETE ===');
+    } catch (e) {
+      print('Debug error: $e');
+    }
+  }
+
+  // Force update dashboard stats (create if doesn't exist)
+  Future<void> _forceUpdateDashboardStats() async {
+    try {
+      print('=== FORCE UPDATING DASHBOARD STATS ===');
+
+      final firestore = FirebaseFirestore.instance;
+
+      // Calculate total expenses from expenses collection
+      final expensesSnapshot = await firestore.collection('expenses').get();
+      double totalExpenses = 0.0;
+
+      for (final doc in expensesSnapshot.docs) {
+        final data = doc.data();
+        final amount = (data['total_amount'] as num?)?.toDouble() ?? (data['amount'] as num?)?.toDouble() ?? 0.0;
+        totalExpenses += amount;
+      }
+
+      final now = Timestamp.fromDate(DateTime.now());
+
+      // Force create/update admin dashboard stats
+      await firestore.collection('admin_dashboard_stats').doc('stats').set({
+        'total_members': 0,
+        'total_expenses': totalExpenses,
+        'maintenance_collected': 0.0,
+        'maintenance_pending': 0.0,
+        'active_maintenance': 0,
+        'fully_paid': 0,
+        'updated_at': now,
+      });
+
+      print('✅ Admin dashboard stats created/updated with total: ₹$totalExpenses');
+
+      // Update line head dashboard stats for all lines
+      final lineStatsSnapshot = await firestore.collection('line_head_dashboard_stats').get();
+      for (final doc in lineStatsSnapshot.docs) {
+        await doc.reference.update({
+          'total_expenses': totalExpenses,
+          'updated_at': now,
+        });
+      }
+
+      // Update user dashboard stats for all users
+      final userStatsSnapshot = await firestore.collection('user_dashboard_stats').get();
+      for (final doc in userStatsSnapshot.docs) {
+        await doc.reference.update({
+          'total_expenses': totalExpenses,
+          'updated_at': now,
+        });
+      }
+
+      print('✅ All dashboard stats force updated with total: ₹$totalExpenses');
+      print('=== FORCE UPDATE COMPLETE ===');
+    } catch (e) {
+      print('Error force updating dashboard stats: $e');
+    }
   }
 
   void _onCategorySelected(String categoryId) {
@@ -140,6 +321,24 @@ class _AddExpensePageState extends State<AddExpensePage> {
         onBackTap: () {
           context.pop();
         },
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: () async {
+              await _debugExpensesAndDashboard();
+              Utility.toast(message: 'Debug info printed to console');
+            },
+            tooltip: 'Debug Expenses & Dashboard',
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () async {
+              await _forceUpdateDashboardStats();
+              Utility.toast(message: 'Dashboard stats force updated!');
+            },
+            tooltip: 'Force Update Dashboard',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

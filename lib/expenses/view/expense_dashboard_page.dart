@@ -5,6 +5,7 @@ import 'package:society_management/expenses/repository/i_expense_repository.dart
 import 'package:society_management/expenses/view/add_expense_page.dart';
 import 'package:society_management/expenses/view/expense_category_page.dart';
 import 'package:society_management/expenses/view/expense_charts_page.dart';
+import 'package:society_management/expenses/view/recurring_expenses_page.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/theme/theme_utils.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
@@ -183,6 +184,11 @@ class _ExpenseDashboardPageState extends State<ExpenseDashboardPage> {
         showDivider: true,
         onBackTap: () => context.pop(),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.autorenew_rounded),
+            onPressed: () => context.push(const RecurringExpensesPage()),
+            tooltip: 'Recurring Expenses',
+          ),
           IconButton(
             icon: const Icon(Icons.bar_chart),
             onPressed: () => _navigateToChartsPage(),
