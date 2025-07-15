@@ -29,10 +29,10 @@ class AdminDashboardState {
 
   String calculateCollectionRate() {
     if (stats == null) return "0%";
-    
+
     final total = stats!.maintenanceCollected + stats!.maintenancePending;
     if (total <= 0) return "0%";
-    
+
     final rate = (stats!.maintenanceCollected / total) * 100;
     return "${rate.toStringAsFixed(1)}%";
   }
@@ -40,15 +40,13 @@ class AdminDashboardState {
 
 class AdminDashboardNotifier extends ValueNotifier<AdminDashboardState> {
   final IDashboardStatsRepository _statsRepository = getIt<IDashboardStatsRepository>();
-  
+
   AdminDashboardNotifier() : super(AdminDashboardState());
 
   Future<void> refreshStats() async {
     try {
       value = value.copyWith(isLoading: true, errorMessage: null);
-
       final result = await _statsRepository.getDashboardStats();
-
       result.fold(
         (failure) {
           value = value.copyWith(

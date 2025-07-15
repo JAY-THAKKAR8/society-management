@@ -12,7 +12,7 @@ import 'package:society_management/line_head/dashboard/view/improved_line_head_q
 import 'package:society_management/line_head/dashboard/view/improved_line_head_summary_section.dart';
 import 'package:society_management/line_head/dashboard/view/line_head_activity_section.dart';
 import 'package:society_management/line_head/dashboard/widget/line_head_alert_dialog.dart';
-import 'package:society_management/line_member/dashboard/view/fixed_line_member_dashboard.dart';
+import 'package:society_management/line_member/dashboard/view/line_member_dashboard.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
 import 'package:society_management/notifications/service/notification_service.dart';
@@ -23,17 +23,17 @@ import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/screenshot_utility.dart';
 import 'package:society_management/utility/utility.dart';
-import 'package:society_management/widget/common_gradient_card.dart';
 import 'package:society_management/widget/kdv_logo.dart';
+import 'package:society_management/widget/welcome_section.dart';
 
-class ImprovedLineHeadDashboard extends StatefulWidget {
-  const ImprovedLineHeadDashboard({super.key});
+class LineHeadDashboard extends StatefulWidget {
+  const LineHeadDashboard({super.key});
 
   @override
-  State<ImprovedLineHeadDashboard> createState() => _ImprovedLineHeadDashboardState();
+  State<LineHeadDashboard> createState() => _LineHeadDashboardState();
 }
 
-class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> with SingleTickerProviderStateMixin {
+class _LineHeadDashboardState extends State<LineHeadDashboard> with SingleTickerProviderStateMixin {
   // Keys to force refresh the dashboard widgets - using unique keys to prevent duplication
   final GlobalKey<ImprovedLineHeadSummarySectionState> _summaryKey = GlobalKey<ImprovedLineHeadSummarySectionState>();
   final GlobalKey<LineHeadActivitySectionState> _activityKey = GlobalKey<LineHeadActivitySectionState>();
@@ -463,7 +463,12 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // Welcome message
-                                  _buildWelcomeSection(),
+
+                                  WelcomeSectionView(
+                                    title: 'Welcome, ${_currentUser?.name ?? 'Line Head'}!',
+                                    subtitle: 'Manage your line with ease',
+                                    icon: Icons.supervisor_account,
+                                  ),
                                   const SizedBox(height: 24),
 
                                   // Summary cards
@@ -500,56 +505,6 @@ class _ImprovedLineHeadDashboardState extends State<ImprovedLineHeadDashboard> w
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeSection() {
-    final isDarkMode = ThemeUtils.isDarkMode(context);
-
-    return CommonGradientCard(
-      gradientColors: isDarkMode ? AppColors.gradientGreenTeal : AppColors.gradientLightGreen,
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, ${_currentUser?.name ?? 'Line Head'}!',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.15,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Manage your line with ease',
-                  style: TextStyle(
-                    fontSize: 14,
-                    letterSpacing: 0.25,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Color(0x4DFFFFFF), // 30% opacity of white
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.supervisor_account,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-        ],
       ),
     );
   }

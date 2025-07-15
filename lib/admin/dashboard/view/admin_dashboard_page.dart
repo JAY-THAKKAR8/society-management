@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 import 'package:society_management/admin/dashboard/model/admin_dashboard_notifier.dart';
-import 'package:society_management/admin/dashboard/view/admin_wlcome_section_view.dart';
 import 'package:society_management/admin/dashboard/widget/admin_quick_actions_section.dart';
 import 'package:society_management/admin/dashboard/widget/admin_summary_section.dart';
 import 'package:society_management/auth/service/auth_service.dart';
@@ -12,6 +12,7 @@ import 'package:society_management/settings/view/common_settings_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/kdv_logo.dart';
+import 'package:society_management/widget/welcome_section.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -41,6 +42,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
     _animationController.forward();
     _dashboardNotifier.refreshStats();
   }
+
+  // Future<void> getUserDetail() async {
+  //   isLoading.value = true;
+  //   final failOrSuccess = await getIt<ICustomerRepository>().customerDetail(
+  //     id: widget.customerId,
+  //   );
+  //   failOrSuccess.fold(
+  //     (l) {
+  //       isLoading.value = false;
+  //       Utility.toast(message: l.formttedMessgeage);
+  //     },
+  //     (r) {
+  //       customer.value = r;
+  //       if (r.cars.isNotEmpty) carList.value = r.cars;
+  //     },
+  //   );
+  //   isLoading.value = false;
+  // }
 
   @override
   void dispose() {
@@ -118,37 +137,54 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                     ],
                   ),
                   actions: [
-                    IconButton(
-                      icon: const Icon(Icons.insights),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const SocietyInsightsPage(),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Colors.white),
+                      tooltip: 'More options',
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'insights':
+                            context.push(const SocietyInsightsPage());
+                            break;
+                          case 'settings':
+                            context.push(const CommonSettingsPage());
+                            break;
+                          case 'logout':
+                            _logout();
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem<String>(
+                          value: 'insights',
+                          child: Row(
+                            children: [
+                              Icon(Icons.insights),
+                              SizedBox(width: 12),
+                              Text('Society Insights (AI)'),
+                            ],
                           ),
-                        );
-                      },
-                      tooltip: 'Society Insights (AI)',
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.settings),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const CommonSettingsPage(),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'settings',
+                          child: Row(
+                            children: [
+                              Icon(Icons.settings),
+                              SizedBox(width: 12),
+                              Text('Settings'),
+                            ],
                           ),
-                        );
-                      },
-                      tooltip: 'Settings',
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.info_outline),
-                      onPressed: () {
-                        // Show society info
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.logout),
-                      onPressed: _logout,
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'logout',
+                          child: Row(
+                            children: [
+                              Icon(Icons.logout),
+                              SizedBox(width: 12),
+                              Text('Logout'),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -163,16 +199,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with SingleTick
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Welcome message
-                          const AdminWlcomeSectionView(),
-                          const SizedBox(height: 24),
-
+                          const WelcomeSectionView(
+                            title: 'Welcome, Admin!',
+                            subtitle: 'Manage your society with ease',
+                            icon: Icons.admin_panel_settings,
+                          ),
+                          // const AdminWlcomeSectionView(),
+                          const Gap(24),
                           // Summary cards
                           AdminSummarySection(dashboardNotifier: _dashboardNotifier),
-                          const SizedBox(height: 32),
-
+                          const Gap(32),
                           // Quick actions
                           const AdminQuickActionsSection(),
-                          const SizedBox(height: 24),
+                          const Gap(24),
                         ],
                       ),
                     ),

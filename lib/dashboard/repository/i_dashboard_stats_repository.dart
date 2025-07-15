@@ -18,8 +18,17 @@ abstract class IDashboardStatsRepository {
   /// Increment total members count
   FirebaseResult<void> incrementTotalMembers();
 
-  /// Increment total expenses amount
+  /// Increment total expenses amount (when adding new expense)
   FirebaseResult<void> incrementTotalExpenses(double amount);
+
+  /// Update expense amount (when editing existing expense)
+  FirebaseResult<void> updateExpenseAmount({
+    required double oldAmount,
+    required double newAmount,
+  });
+
+  /// Decrement total expenses amount (when deleting expense)
+  FirebaseResult<void> decrementTotalExpenses(double amount);
 
   /// Update dashboard stats when maintenance payment is recorded
   Future<void> updateDashboardsForMaintenancePayment({

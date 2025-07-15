@@ -11,7 +11,12 @@ import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_app_bar.dart';
 
 class AddExpensePage extends StatefulWidget {
-  const AddExpensePage({super.key});
+  final ExpenseModel? expenseToEdit; // Optional expense for editing
+
+  const AddExpensePage({
+    super.key,
+    this.expenseToEdit,
+  });
 
   @override
   State<AddExpensePage> createState() => _AddExpensePageState();
@@ -25,6 +30,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
   String? _selectedCategoryId;
   String? _selectedLine;
   ExpensePriority _selectedPriority = ExpensePriority.medium;
+
+  // Check if we're in edit mode
+  bool get isEditMode => widget.expenseToEdit != null;
 
   // Predefined categories with their colors
   final Map<String, Map<String, dynamic>> _predefinedCategories = {
@@ -63,8 +71,38 @@ class _AddExpensePageState extends State<AddExpensePage> {
   @override
   void initState() {
     super.initState();
-    // Set default category
-    _selectedCategoryId = 'maintenance';
+    _initializeFormForEditing();
+  }
+
+  // Initialize form fields when editing an expense
+  void _initializeFormForEditing() {
+    if (isEditMode && widget.expenseToEdit != null) {
+      final expense = widget.expenseToEdit!;
+
+      // Set category based on expense category name
+      _selectedCategoryId = _findCategoryIdByName(expense.categoryName);
+
+      // Set line
+      _selectedLine = expense.lineName;
+
+      // Set priority
+      _selectedPriority = expense.priority ?? ExpensePriority.medium;
+    } else {
+      // Set default category for new expense
+      _selectedCategoryId = 'maintenance';
+    }
+  }
+
+  // Helper method to find category ID by name
+  String? _findCategoryIdByName(String? categoryName) {
+    if (categoryName == null) return null;
+
+    for (final entry in _predefinedCategories.entries) {
+      if (entry.value['name'] == categoryName) {
+        return entry.key;
+      }
+    }
+    return null;
   }
 
   @override
@@ -316,7 +354,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'Add New Expense',
+        title: isEditMode ? 'Edit Expense' : 'Add New Expense',
         showDivider: true,
         onBackTap: () {
           context.pop();
@@ -370,6 +408,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                 ExpenseForm(
                   isLoading: loading,
                   onSubmit: _submitExpense,
+                  expenseToEdit: widget.expenseToEdit, // Pass expense for editing
                 ),
               ],
             );

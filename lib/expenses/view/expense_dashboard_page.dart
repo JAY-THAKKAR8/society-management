@@ -1,10 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:society_management/dashboard/repository/dashboard_stats_repository.dart';
 import 'package:society_management/expenses/model/expense_model.dart';
 import 'package:society_management/expenses/repository/i_expense_repository.dart';
 import 'package:society_management/expenses/view/add_expense_page.dart';
 import 'package:society_management/expenses/view/expense_category_page.dart';
 import 'package:society_management/expenses/view/expense_charts_page.dart';
+import 'package:society_management/expenses/view/expense_details_page.dart';
 import 'package:society_management/expenses/view/recurring_expenses_page.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/theme/theme_utils.dart';
@@ -358,45 +361,42 @@ class _ExpenseDashboardPageState extends State<ExpenseDashboardPage> {
           child: ThemeAwareCard(
             useContainerColor: true,
             borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: ThemeUtils.getHighlightColor(context, Colors.blue),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.account_balance_wallet,
-                          color: Colors.blue,
-                        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: ThemeUtils.getHighlightColor(context, Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const Spacer(),
-                      Text(
-                        _selectedFilter,
-                        style: Theme.of(context).textTheme.bodySmall,
+                      child: const Icon(
+                        Icons.account_balance_wallet,
+                        color: Colors.blue,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    formatter.format(totalAmount),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Total Expenses',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _selectedFilter,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  formatter.format(totalAmount),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total Expenses',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ),
         ),
@@ -405,45 +405,43 @@ class _ExpenseDashboardPageState extends State<ExpenseDashboardPage> {
           child: ThemeAwareCard(
             useContainerColor: true,
             borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: ThemeUtils.getHighlightColor(context, Colors.green),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.receipt_long,
-                          color: Colors.green,
-                        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: ThemeUtils.getHighlightColor(context, Colors.green),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const Spacer(),
-                      Text(
-                        _selectedFilter,
-                        style: Theme.of(context).textTheme.bodySmall,
+                      child: const Icon(
+                        Icons.receipt_long,
+                        color: Colors.green,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    expenseCount.toString(),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Expense Count',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+                    ),
+                    const SizedBox(width: 8),
+                    // const Spacer(),
+                    Text(
+                      _selectedFilter,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  expenseCount.toString(),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Expense Count',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ),
         ),
@@ -491,95 +489,268 @@ class _ExpenseDashboardPageState extends State<ExpenseDashboardPage> {
         const SizedBox(height: 16),
         ...List.generate(_recentExpenses.length, (index) {
           final expense = _recentExpenses[index];
-          final dateStr = expense.createdAt != null
-              ? DateFormat('MMM d, yyyy').format(DateTime.parse(expense.createdAt!))
-              : 'Unknown date';
+          return _ExpenseListItem(expense: expense);
+        }),
+        if (_recentExpenses.isEmpty)
+          Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No expenses found',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 
-          return ThemeAwareCard(
-            margin: const EdgeInsets.only(bottom: 12),
-            useContainerColor: true,
-            borderRadius: BorderRadius.circular(12),
-            onTap: () {
-              // Navigate to expense details page - for now, we'll just show a message
-              Utility.toast(message: 'Expense details page will be implemented soon');
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: ThemeUtils.getHighlightColor(
-                          context, _getCategoryColor(expense.categoryName ?? 'Uncategorized')),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.receipt_long,
-                      color: _getCategoryColor(expense.categoryName ?? 'Uncategorized'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          expense.name ?? 'Unnamed Expense',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Text(
-                          expense.categoryName ?? 'Uncategorized',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          dateStr,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        formatter.format(expense.totalAmount ?? 0),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+  Widget _ExpenseListItem({required ExpenseModel expense}) {
+    final dateStr = expense.createdAt != null
+        ? DateFormat('MMM d, yyyy').format(DateTime.parse(expense.createdAt!))
+        : 'Unknown date';
+
+    final formatter = NumberFormat.currency(
+      symbol: '₹',
+      decimalDigits: 2,
+      locale: 'en_IN',
+    );
+
+    return ThemeAwareCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      useContainerColor: true,
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        // Navigate to expense details page
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ExpenseDetailsPage(
+              expenseId: expense.id ?? '',
+              expense: expense,
+            ),
+          ),
+        );
+      },
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: ThemeUtils.getHighlightColor(context, _getCategoryColor(expense.categoryName ?? 'Uncategorized')),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.receipt_long,
+              color: _getCategoryColor(expense.categoryName ?? 'Uncategorized'),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  expense.name ?? 'Unnamed Expense',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      if (expense.lineNumber != null)
-                        Container(
-                          margin: const EdgeInsets.only(top: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: ThemeUtils.getHighlightColor(context, _getLineColor(expense.lineName ?? '')),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            expense.lineName ?? 'Unknown Line',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: _getLineColor(expense.lineName ?? ''),
-                            ),
-                          ),
-                        ),
-                    ],
+                ),
+                Text(
+                  expense.categoryName ?? 'Uncategorized',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  dateStr,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                formatter.format(expense.totalAmount ?? 0),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              if (expense.lineNumber != null)
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ThemeUtils.getHighlightColor(context, _getLineColor(expense.lineName ?? '')),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    expense.lineName ?? 'Unknown Line',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: _getLineColor(expense.lineName ?? ''),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () => _editExpense(expense),
+                    icon: const Icon(Icons.edit, size: 18),
+                    tooltip: 'Edit Expense',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => _deleteExpense(expense),
+                    icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                    tooltip: 'Delete Expense',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
-            ),
-          );
-        }),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
+  }
+
+  // Edit expense functionality
+  void _editExpense(ExpenseModel expense) {
+    if (expense.id == null) {
+      Utility.toast(message: 'Cannot edit expense: Invalid expense ID');
+      return;
+    }
+
+    // Navigate to AddExpensePage in edit mode
+    Navigator.of(context)
+        .push(
+      MaterialPageRoute(
+        builder: (context) => AddExpensePage(
+          expenseToEdit: expense, // Pass expense for editing
+        ),
+      ),
+    )
+        .then((result) {
+      // Refresh the data if expense was edited
+      if (result == true) {
+        _loadData();
+        Utility.toast(message: 'Expense updated successfully');
+      }
+    });
+  }
+
+  // Delete expense functionality
+  void _deleteExpense(ExpenseModel expense) {
+    if (expense.id == null) {
+      Utility.toast(message: 'Cannot delete expense: Invalid expense ID');
+      return;
+    }
+
+    // Show confirmation dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Expense'),
+        content: Text(
+          'Are you sure you want to delete "${expense.name}"?\n\nThis action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _performDeleteExpense(expense);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Perform the actual delete operation
+  Future<void> _performDeleteExpense(ExpenseModel expense) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final result = await _repository.deleteExpense(expenseId: expense.id!);
+
+      // Hide loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      result.fold(
+        (failure) {
+          Utility.toast(message: 'Error deleting expense: ${failure.message}');
+        },
+        (success) {
+          // Update dashboard stats by decrementing the expense amount
+          _updateDashboardStatsAfterDelete(expense.totalAmount ?? 0.0);
+
+          // Refresh the data
+          _loadData();
+          Utility.toast(message: 'Expense deleted successfully');
+        },
+      );
+    } catch (e) {
+      // Hide loading dialog
+      if (mounted) Navigator.of(context).pop();
+      Utility.toast(message: 'Error deleting expense: $e');
+    }
+  }
+
+  // Update dashboard stats after deleting an expense
+  Future<void> _updateDashboardStatsAfterDelete(double amount) async {
+    try {
+      // Use the dashboard repository to decrement total expenses
+      final dashboardRepo = DashboardStatsRepository(FirebaseFirestore.instance);
+      final result = await dashboardRepo.decrementTotalExpenses(amount);
+
+      result.fold(
+        (failure) => print('Error updating dashboard stats: ${failure.message}'),
+        (success) => print('✅ Dashboard stats updated after deletion'),
+      );
+    } catch (e) {
+      print('Error updating dashboard stats after deletion: $e');
+    }
   }
 
   Color _getCategoryColor(String categoryName) {

@@ -14,7 +14,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
   DashboardStatsRepository(super.firestore);
 
   // Collection references for different dashboard types
-  final CollectionReference _adminDashboardCollection = FirebaseFirestore.instance.collection('admin_dashboard_stats');
+  // final CollectionReference _adminDashboardCollection = FirebaseFirestore.instance.collection('admin_dashboard_stats');
 
   final CollectionReference _lineHeadDashboardCollection =
       FirebaseFirestore.instance.collection('line_head_dashboard_stats');
@@ -26,16 +26,15 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
     return Result<DashboardStatsModel>().tryCatch(
       run: () async {
         // Get or create admin dashboard stats
-        final statsDoc = await _adminDashboardCollection.doc('stats').get();
+        final statsDoc = await FirebaseFirestore.instance.adminDashboardStats.doc('stats').get();
         final now = Timestamp.now();
 
         // If stats don't exist, calculate and create them
         if (!statsDoc.exists) {
           final stats = await _calculateAdminDashboardStats();
-          print('Created new admin dashboard stats:1111 ${stats.totalExpenses}');
 
           // Create initial stats document
-          await _adminDashboardCollection.doc('stats').set({
+          await statsDoc.reference.set({
             'total_members': stats.totalMembers,
             'total_expenses': stats.totalExpenses,
             'maintenance_collected': stats.maintenanceCollected,
@@ -55,7 +54,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
         print('Created new admin dashboard stats:3333 ${updatedStats.totalExpenses}');
 
         // Update the stats document
-        await _adminDashboardCollection.doc('stats').update({
+        await statsDoc.reference.update({
           'total_members': updatedStats.totalMembers,
           'total_expenses': updatedStats.totalExpenses,
           'maintenance_collected': updatedStats.maintenanceCollected,
@@ -67,7 +66,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
         print('Created new admin dashboard stats:4444 ${updatedStats.totalExpenses}');
 
         // Get the updated document
-        final updatedStatsDoc = await _adminDashboardCollection.doc('stats').get();
+        final updatedStatsDoc = await statsDoc.reference.get();
         return DashboardStatsModel.fromJson(updatedStatsDoc.data() as Map<String, dynamic>);
       },
     );
@@ -132,9 +131,17 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
     final expensesSnapshot = await FirebaseFirestore.instance.collection('expenses').get();
     double totalExpenses = 0.0;
 
+    print('📊 Calculating total expenses from ${expensesSnapshot.docs.length} documents'); // Debug log
+
     for (final doc in expensesSnapshot.docs) {
-      totalExpenses += (doc.data()['total_amount'] as num?)?.toDouble() ?? 0.0;
+      final data = doc.data();
+      // Try both possible field names for amount
+      final amount = (data['total_amount'] as num?)?.toDouble() ?? (data['amount'] as num?)?.toDouble() ?? 0.0;
+      totalExpenses += amount;
+      print('  - ${data['name'] ?? 'Unknown'}: ₹$amount'); // Debug log
     }
+
+    print('📊 Total calculated expenses: ₹$totalExpenses'); // Debug log
 
     return DashboardStatsModel(
       totalMembers: totalMembers,
@@ -164,7 +171,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
     final batch = FirebaseFirestore.instance.batch();
 
     // Update admin dashboard
-    final adminStatsRef = _adminDashboardCollection.doc('stats');
+    final adminStatsRef = FirebaseFirestore.instance.adminDashboardStats.doc('stats');
     final adminStatsDoc = await adminStatsRef.get();
 
     if (adminStatsDoc.exists) {
@@ -365,29 +372,68 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
   FirebaseResult<void> incrementTotalExpenses(double amount) {
     return Result<void>().tryCatch(
       run: () async {
-        // Update all dashboard collections
+        // Update all dashboard collections - FAST INCREMENTAL UPDATE
         await _updateAllDashboardsForExpenseChange(amount);
         return;
       },
     );
   }
 
+  // Method to handle expense updates (when expense amount changes)
+  @override
+  FirebaseResult<void> updateExpenseAmount({
+    required double oldAmount,
+    required double newAmount,
+  }) {
+    return Result<void>().tryCatch(
+      run: () async {
+        // Calculate the difference and apply it
+        final difference = newAmount - oldAmount;
+        print('🔄 Expense updated: ₹$oldAmount → ₹$newAmount (difference: ₹$difference)'); // Debug log
+
+        // Apply the difference to all dashboards
+        await _updateAllDashboardsForExpenseChange(difference);
+        return;
+      },
+    );
+  }
+
+  // Method to handle expense deletions
+  @override
+  FirebaseResult<void> decrementTotalExpenses(double amount) {
+    return Result<void>().tryCatch(
+      run: () async {
+        // Subtract the amount from all dashboards
+        print('🗑️ Expense deleted: -₹$amount'); // Debug log
+        await _updateAllDashboardsForExpenseChange(-amount);
+        return;
+      },
+    );
+  }
+
   // Helper method to update all dashboard collections when expense amount changes
+  // This is MUCH more efficient - just increments the existing total instead of recalculating everything
   Future<void> _updateAllDashboardsForExpenseChange(double amount) async {
     final now = Timestamp.now();
 
-    // Update admin dashboard
-    final adminStatsRef = _adminDashboardCollection.doc('stats');
+    print('� FAST UPDATE: Adding ₹$amount to all dashboards'); // Debug log
+
+    // Update admin dashboard - INCREMENTAL UPDATE (FAST)
+    final adminStatsRef = FirebaseFirestore.instance.adminDashboardStats.doc('stats');
     final adminStatsDoc = await adminStatsRef.get();
 
     if (adminStatsDoc.exists) {
-      final data = adminStatsDoc.data() as Map<String, dynamic>?;
+      final data = adminStatsDoc.data();
       final currentAmount = data?['total_expenses'] as double? ?? 0.0;
+      final newTotal = currentAmount + amount;
+
       await adminStatsRef.update({
-        'total_expenses': currentAmount + amount,
+        'total_expenses': newTotal,
         'updated_at': now,
       });
+      print('✅ Admin dashboard: ₹$currentAmount + ₹$amount = ₹$newTotal'); // Debug log
     } else {
+      // Create initial admin dashboard stats if doesn't exist
       await adminStatsRef.set({
         'total_members': 0,
         'total_expenses': amount,
@@ -397,7 +443,34 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
         'fully_paid': 0,
         'updated_at': now,
       });
+      print('✅ Created admin dashboard with: ₹$amount'); // Debug log
     }
+
+    // Update all line head dashboards - INCREMENTAL UPDATE (FAST)
+    final lineHeadDocs = await _lineHeadDashboardCollection.get();
+    for (final doc in lineHeadDocs.docs) {
+      final data = doc.data() as Map<String, dynamic>?;
+      final currentAmount = data?['total_expenses'] as double? ?? 0.0;
+      await doc.reference.update({
+        'total_expenses': currentAmount + amount,
+        'updated_at': now,
+      });
+    }
+    print('✅ Updated ${lineHeadDocs.docs.length} line head dashboards (+₹$amount each)'); // Debug log
+
+    // Update all user dashboards - INCREMENTAL UPDATE (FAST)
+    final userDocs = await _userDashboardCollection.get();
+    for (final doc in userDocs.docs) {
+      final data = doc.data() as Map<String, dynamic>?;
+      final currentAmount = data?['total_expenses'] as double? ?? 0.0;
+      await doc.reference.update({
+        'total_expenses': currentAmount + amount,
+        'updated_at': now,
+      });
+    }
+    print('✅ Updated ${userDocs.docs.length} user dashboards (+₹$amount each)'); // Debug log
+
+    print('🎉 FAST UPDATE COMPLETE: All dashboards updated in milliseconds!'); // Debug log
   }
 
   // Method to update dashboard stats when maintenance is recorded
@@ -413,11 +486,11 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
     final batch = FirebaseFirestore.instance.batch();
 
     // Update admin dashboard
-    final adminStatsRef = _adminDashboardCollection.doc('stats');
+    final adminStatsRef = FirebaseFirestore.instance.adminDashboardStats.doc('stats');
     final adminStatsDoc = await adminStatsRef.get();
 
     if (adminStatsDoc.exists) {
-      final data = adminStatsDoc.data() as Map<String, dynamic>?;
+      final data = adminStatsDoc.data();
       final currentCollected = data?['maintenance_collected'] as double? ?? 0.0;
       final currentPending = data?['maintenance_pending'] as double? ?? 0.0;
 
@@ -519,7 +592,7 @@ class DashboardStatsRepository extends IDashboardStatsRepository {
       final now = Timestamp.now();
 
       // Update the stats document
-      await _adminDashboardCollection.doc('stats').set({
+      await FirebaseFirestore.instance.adminDashboardStats.doc('stats').set({
         'total_members': stats.totalMembers,
         'total_expenses': stats.totalExpenses,
         'maintenance_collected': stats.maintenanceCollected,

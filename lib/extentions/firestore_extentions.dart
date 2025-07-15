@@ -10,4 +10,7 @@ extension FirestoreExtentionsX on FirebaseFirestore {
   FireStoreCollectionRefrence get activities => collection('activities');
   FireStoreCollectionRefrence get complaints => collection('complaints');
   FireStoreCollectionRefrence get events => collection('events');
+  FireStoreCollectionRefrence get adminDashboardStats => collection('admin_dashboard_stats');
+  FireStoreCollectionRefrence get lineHeadDashboardStats => collection('line_head_dashboard_stats');
+  FireStoreCollectionRefrence get userSpecificStats => collection('user_specific_stats');
 }

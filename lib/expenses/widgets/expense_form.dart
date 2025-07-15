@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:society_management/expenses/model/expense_item_model.dart';
+import 'package:society_management/expenses/model/expense_model.dart';
 import 'package:society_management/expenses/widgets/expense_item_list.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/app_text_form_field.dart';
@@ -12,6 +13,7 @@ class ExpenseForm extends StatefulWidget {
     super.key,
     required this.onSubmit,
     this.isLoading = false,
+    this.expenseToEdit, // Optional expense for editing
   });
 
   final Function({
@@ -22,6 +24,7 @@ class ExpenseForm extends StatefulWidget {
     String? description,
   }) onSubmit;
   final bool isLoading;
+  final ExpenseModel? expenseToEdit;
 
   @override
   State<ExpenseForm> createState() => _ExpenseFormState();
@@ -37,6 +40,43 @@ class _ExpenseFormState extends State<ExpenseForm> {
   DateTime? _startDate;
   DateTime? _endDate;
   final List<ExpenseItemModel> _items = [];
+
+  // Check if we're in edit mode
+  bool get isEditMode => widget.expenseToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFormForEditing();
+  }
+
+  // Initialize form fields when editing an expense
+  void _initializeFormForEditing() {
+    if (isEditMode && widget.expenseToEdit != null) {
+      final expense = widget.expenseToEdit!;
+
+      // Set form field values
+      _nameController.text = expense.name ?? '';
+      _descriptionController.text = expense.description ?? '';
+
+      // Set dates
+      if (expense.startDate != null) {
+        _startDate = DateTime.parse(expense.startDate!);
+        _startDateController.text = DateFormat('MMM dd, yyyy').format(_startDate!);
+      }
+
+      if (expense.endDate != null) {
+        _endDate = DateTime.parse(expense.endDate!);
+        _endDateController.text = DateFormat('MMM dd, yyyy').format(_endDate!);
+      }
+
+      // Set items
+      if (expense.items.isNotEmpty) {
+        _items.clear();
+        _items.addAll(expense.items);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -170,7 +210,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
           ),
           const Gap(32),
           CommonButton(
-            text: 'Submit',
+            text: isEditMode ? 'Update Expense' : 'Add Expense',
             isLoading: widget.isLoading,
             onTap: _handleSubmit,
           ),

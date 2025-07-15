@@ -6,8 +6,8 @@ import 'package:society_management/auth/view/login_page.dart';
 import 'package:society_management/chat/test/gemini_api_test_fixed.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
-import 'package:society_management/line_head/dashboard/view/fixed_line_head_dashboard.dart';
-import 'package:society_management/line_member/dashboard/view/fixed_line_member_dashboard.dart';
+import 'package:society_management/line_head/dashboard/view/line_head_dashboard.dart';
+import 'package:society_management/line_member/dashboard/view/line_member_dashboard.dart';
 import 'package:society_management/users/view/user_information_page.dart';
 import 'package:society_management/utility/extentions/navigation_extension.dart';
 import 'package:society_management/utility/utility.dart';
@@ -60,11 +60,11 @@ class _SplashPageState extends State<SplashPage> {
             if (user.role == AppConstants.lineMember) {
               context.pushAndRemoveUntil(const ImprovedLineMemberDashboard());
             } else if (user.role == AppConstants.lineLead) {
-              context.pushAndRemoveUntil(const ImprovedLineHeadDashboard());
+              context.pushAndRemoveUntil(const LineHeadDashboard());
             } else if (user.role == AppConstants.lineHeadAndMember) {
               // For combined role, default to Line Head dashboard
               // User can choose different dashboard on next login
-              context.pushAndRemoveUntil(const ImprovedLineHeadDashboard());
+              context.pushAndRemoveUntil(const LineHeadDashboard());
             } else {
               context.pushAndRemoveUntil(const AdminDashboardPage());
             }

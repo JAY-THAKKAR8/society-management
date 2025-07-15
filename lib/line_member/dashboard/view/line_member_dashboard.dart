@@ -7,7 +7,7 @@ import 'package:society_management/complaints/view/my_complaints_page.dart';
 import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/injector/injector.dart';
-import 'package:society_management/line_head/dashboard/view/fixed_line_head_dashboard.dart';
+import 'package:society_management/line_head/dashboard/view/line_head_dashboard.dart';
 import 'package:society_management/line_member/dashboard/view/improved_line_member_quick_actions.dart';
 import 'package:society_management/line_member/dashboard/view/improved_line_member_summary_section.dart';
 import 'package:society_management/maintenance/view/my_maintenance_status_page.dart';
@@ -20,6 +20,7 @@ import 'package:society_management/utility/screenshot_utility.dart';
 import 'package:society_management/utility/utility.dart';
 import 'package:society_management/widget/common_gradient_card.dart';
 import 'package:society_management/widget/kdv_logo.dart';
+import 'package:society_management/widget/welcome_section.dart';
 
 // Data model for dashboard state
 class LineMemberDashboardState {
@@ -204,7 +205,7 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                context.pushAndRemoveUntil(const ImprovedLineHeadDashboard());
+                context.pushAndRemoveUntil(const LineHeadDashboard());
               },
               child: const Text('Switch'),
             ),
@@ -363,7 +364,11 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Welcome message
-                  _buildWelcomeSection(state.currentUser),
+                  WelcomeSectionView(
+                    title: 'Welcome, ${state.currentUser?.name ?? 'Member'}!',
+                    subtitle: 'Stay updated with your society',
+                    icon: Icons.person,
+                  ),
                   const SizedBox(height: 24),
 
                   // Summary cards
@@ -393,56 +398,6 @@ class _ImprovedLineMemberDashboardState extends State<ImprovedLineMemberDashboar
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildWelcomeSection(UserModel? currentUser) {
-    final isDarkMode = ThemeUtils.isDarkMode(context);
-
-    return CommonGradientCard(
-      gradientColors: isDarkMode ? AppColors.gradientPurplePink : AppColors.gradientLightPurple,
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, ${currentUser?.name ?? 'Member'}!',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.15,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Stay updated with your society',
-                  style: TextStyle(
-                    fontSize: 14,
-                    letterSpacing: 0.25,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Color(0x4DFFFFFF),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

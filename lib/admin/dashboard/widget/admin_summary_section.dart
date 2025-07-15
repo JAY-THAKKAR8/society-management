@@ -35,7 +35,6 @@ class AdminSummarySection extends StatelessWidget {
   }
 
   Widget _buildStatsGrid(BuildContext context, AdminDashboardState state) {
-    print("${state.stats?.totalExpenses.toStringAsFixed(2)}Total expenses");
     return GridView.count(
       crossAxisCount: 2,
       crossAxisSpacing: 16,
