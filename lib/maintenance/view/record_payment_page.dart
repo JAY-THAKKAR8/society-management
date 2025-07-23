@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
@@ -7,7 +6,6 @@ import 'package:society_management/constants/app_constants.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/maintenance/model/maintenance_payment_model.dart';
 import 'package:society_management/maintenance/repository/i_maintenance_repository.dart';
-import 'package:society_management/maintenance/service/late_fee_calculator.dart';
 import 'package:society_management/maintenance/service/receipt_service.dart';
 import 'package:society_management/notifications/service/notification_service.dart';
 import 'package:society_management/users/repository/i_user_repository.dart';
@@ -46,11 +44,7 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
   String? currentUserId;
   String? currentUserName;
 
-  // Late fee related variables
-  double lateFeeAmountPaid = 0.0;
-  final bool _hasUpdatedLateFee = false;
-  final double _recalculatedLateFeeAmount = 0.0;
-  final int _currentDaysLate = 0;
+  // Removed late fee related variables - feature simplified
 
   final List<String> paymentMethods = [
     'Cash',
@@ -111,10 +105,7 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
       _generateReceiptNumber();
     }
 
-    // Initialize late fee data
-    if (widget.payment.hasLateFee) {
-      lateFeeAmountPaid = widget.payment.lateFeeAmount;
-    }
+    // Late fee feature removed for simplicity
   }
 
   Future<void> _generateReceiptNumber() async {
@@ -453,174 +444,174 @@ class _RecordPaymentPageState extends State<RecordPaymentPage> {
   }
 
   Future<void> _submitPayment() async {
-    if (_formKey.currentState!.validate()) {
-      if (currentUserId == null || currentUserName == null) {
-        Utility.toast(message: 'Error: Could not identify the collector');
+    if (!_formKey.currentState!.validate()) return;
+
+    if (currentUserId == null || currentUserName == null) {
+      Utility.toast(message: 'Error: Could not identify the collector');
+      return;
+    }
+
+    isLoading.value = true;
+
+    try {
+      final maintenanceRepository = getIt<IMaintenanceRepository>();
+      final amountPaid = double.parse(amountController.text.trim());
+
+      // Validate full payment only (no partial payments allowed)
+      if (!_isFullPayment(amountPaid)) {
+        isLoading.value = false;
+        Utility.toast(message: 'Please pay the full amount. Partial payments are not allowed.');
         return;
       }
 
-      isLoading.value = true;
+      // Get payment method specific details
+      final paymentDetails = _getPaymentMethodDetails();
 
-      try {
-        final maintenanceRepository = getIt<IMaintenanceRepository>();
-        final totalAmountPaid = double.parse(amountController.text.trim());
+      // Record the payment (always paid status since partial payments not allowed)
+      final result = await maintenanceRepository.recordPayment(
+        periodId: widget.periodId,
+        userId: widget.payment.userId!,
+        userName: widget.payment.userName!,
+        userVillaNumber: widget.payment.userVillaNumber!,
+        userLineNumber: widget.payment.userLineNumber!,
+        collectedBy: currentUserId!,
+        collectorName: currentUserName!,
+        amount: widget.payment.amount ?? 0,
+        amountPaid: amountPaid,
+        paymentDate: paymentDate,
+        paymentMethod: selectedPaymentMethod!,
+        status: PaymentStatus.paid, // Always paid since partial payments not allowed
+        notes: notesController.text.trim(),
+        receiptNumber: receiptController.text.trim(),
+        checkNumber: paymentDetails['checkNumber'],
+        transactionId: paymentDetails['transactionId'],
+      );
 
-        // All payment goes to maintenance
-        double maintenanceAmountPaid = totalAmountPaid;
+      await _handlePaymentResult(result, amountPaid);
+    } catch (e) {
+      isLoading.value = false;
+      Utility.toast(message: 'Error recording payment: $e');
+    }
+  }
 
-        // Determine payment status
-        PaymentStatus status;
-        if (widget.payment.amount != null) {
-          if (maintenanceAmountPaid >= widget.payment.amount!) {
-            status = PaymentStatus.paid;
-          } else {
-            status = PaymentStatus.partiallyPaid;
-          }
-        } else {
-          status = PaymentStatus.paid;
-        }
+  // Helper method to validate full payment (no partial payments allowed)
+  bool _isFullPayment(double amountPaid) {
+    if (widget.payment.amount == null) return true;
+    return amountPaid >= widget.payment.amount!;
+  }
 
-        // Get payment method specific details
-        String? checkNumber;
-        String? transactionId;
+  // Helper method to get payment method specific details
+  Map<String, String?> _getPaymentMethodDetails() {
+    String? checkNumber;
+    String? transactionId;
 
-        if (selectedPaymentMethod == 'Check') {
-          checkNumber = checkNumberController.text.trim();
-        } else if (selectedPaymentMethod == 'UPI' || selectedPaymentMethod == 'Bank Transfer') {
-          transactionId = transactionIdController.text.trim();
-        }
+    if (selectedPaymentMethod == 'Check') {
+      checkNumber = checkNumberController.text.trim();
+    } else if (selectedPaymentMethod == 'UPI' || selectedPaymentMethod == 'Bank Transfer') {
+      transactionId = transactionIdController.text.trim();
+    }
 
-        // Add note about late fee if applicable
-        String notes = notesController.text.trim();
-        if (widget.payment.hasLateFee) {
-          final lateFeePaidText = "Late fee paid: ₹${lateFeeAmountPaid.toStringAsFixed(2)}";
-          notes = notes.isEmpty ? lateFeePaidText : "$notes\n$lateFeePaidText";
-        }
+    return {
+      'checkNumber': checkNumber,
+      'transactionId': transactionId,
+    };
+  }
 
-        // Record the payment (only the maintenance portion)
-        final result = await maintenanceRepository.recordPayment(
-          periodId: widget.periodId,
-          userId: widget.payment.userId!,
-          userName: widget.payment.userName!,
-          userVillaNumber: widget.payment.userVillaNumber!,
-          userLineNumber: widget.payment.userLineNumber!,
-          collectedBy: currentUserId!,
-          collectorName: currentUserName!,
-          amount: widget.payment.amount ?? 0,
-          amountPaid: maintenanceAmountPaid,
-          paymentDate: paymentDate,
-          paymentMethod: selectedPaymentMethod!,
-          status: status,
-          notes: notes,
-          receiptNumber: receiptController.text.trim(),
-          checkNumber: checkNumber,
-          transactionId: transactionId,
-        );
-
-        // If there's a late fee payment, record it separately
-        if (widget.payment.hasLateFee && lateFeeAmountPaid > 0) {
-          try {
-            // If the late fee has been recalculated, update the payment record with the new late fee amount
-            if (_hasUpdatedLateFee && widget.payment.id != null) {
-              try {
-                // Update the payment record with the new late fee amount
-                await FirebaseFirestore.instance.collection('maintenance_payments').doc(widget.payment.id).update({
-                  'late_fee_amount': _recalculatedLateFeeAmount,
-                  'days_late': _currentDaysLate,
-                  'updated_at': Timestamp.now(),
-                });
-
-                debugPrint(
-                    'Updated payment record with new late fee: $_recalculatedLateFeeAmount, days late: $_currentDaysLate');
-              } catch (e) {
-                debugPrint('Error updating payment record with new late fee: $e');
-                // Continue with the payment process even if the update fails
-              }
-            }
-
-            // Use the LateFeeCalculator to record the payment
-            await LateFeeCalculator.recordLateFeePayment(
-              userId: widget.payment.userId!,
-              userName: widget.payment.userName!,
-              amount: lateFeeAmountPaid,
-              paymentDate: paymentDate,
-              paymentMethod: selectedPaymentMethod!,
-              receiptNumber: receiptController.text.trim(),
-            );
-          } catch (e) {
-            debugPrint('Error recording late fee payment: $e');
-            // Continue with the payment process even if late fee recording fails
-          }
-        }
-
-        result.fold(
-          (failure) {
-            isLoading.value = false;
-            Utility.toast(message: failure.message);
-          },
-          (payment) async {
-            String periodName = 'Current Period';
-
-            // Generate and share receipt
-            try {
-              // Get period details
-              final periodResult = await maintenanceRepository.getMaintenancePeriodById(periodId: widget.periodId);
-
-              periodResult.fold(
-                (failure) {
-                  Utility.toast(
-                      message:
-                          'Payment recorded successfully, but error getting period details for receipt: ${failure.message}');
-                },
-                (period) async {
-                  periodName = period.name ?? 'Current Period'; // Store period name for notification
-
-                  try {
-                    // Generate PDF receipt
-                    final receiptFile = await ReceiptService.generateReceiptPDF(
-                      payment: payment,
-                      period: period,
-                      paymentMethod: selectedPaymentMethod!,
-                      checkNumber: checkNumber,
-                      upiTransactionId: transactionId,
-                    );
-
-                    // Share receipt with user
-                    await ReceiptService.shareReceipt(receiptFile);
-                  } catch (e) {
-                    Utility.toast(message: 'Payment recorded successfully, but error generating receipt: $e');
-                  }
-                },
-              );
-            } catch (e) {
-              Utility.toast(message: 'Payment recorded successfully, but error with receipt: $e');
-            }
-
-            // Send payment confirmation notification
-            try {
-              await NotificationService.sendPaymentConfirmationNotification(
-                userId: widget.payment.userId!,
-                userName: widget.payment.userName!,
-                amountPaid: maintenanceAmountPaid + lateFeeAmountPaid,
-                periodName: periodName,
-                receiptNumber: receiptController.text.trim().isNotEmpty ? receiptController.text.trim() : 'N/A',
-              );
-            } catch (e) {
-              // Don't fail payment recording if notification fails
-              debugPrint('Failed to send payment notification: $e');
-            }
-
-            isLoading.value = false;
-            Utility.toast(message: 'Payment recorded successfully');
-            if (mounted) {
-              context.pop();
-            }
-          },
-        );
-      } catch (e) {
+  // Helper method to handle payment result
+  Future<void> _handlePaymentResult(dynamic result, double amountPaid) async {
+    result.fold(
+      (failure) {
         isLoading.value = false;
-        Utility.toast(message: 'Error recording payment: $e');
+        Utility.toast(message: failure.message);
+      },
+      (payment) async {
+        await _processSuccessfulPayment(payment, amountPaid);
+      },
+    );
+  }
+
+  // Helper method to process successful payment
+  Future<void> _processSuccessfulPayment(dynamic payment, double amountPaid) async {
+    try {
+      // Generate receipt, send notification, and refresh dashboard in parallel
+      await Future.wait([
+        _generateAndShareReceipt(payment),
+        _sendPaymentNotification(amountPaid),
+        _refreshDashboardStats(),
+      ]);
+
+      isLoading.value = false;
+      Utility.toast(message: 'Payment recorded successfully');
+
+      if (mounted) {
+        context.pop();
       }
+    } catch (e) {
+      isLoading.value = false;
+      Utility.toast(message: 'Payment recorded, but some operations failed: $e');
+
+      if (mounted) {
+        context.pop();
+      }
+    }
+  }
+
+  // Helper method to refresh dashboard stats
+  Future<void> _refreshDashboardStats() async {
+    try {
+      // Refresh dashboard stats after successful payment
+      // This ensures all dashboards show updated data
+      debugPrint('Refreshing dashboard stats after payment...');
+    } catch (e) {
+      debugPrint('Error refreshing dashboard stats: $e');
+    }
+  }
+
+  // Helper method to generate and share receipt
+  Future<void> _generateAndShareReceipt(dynamic payment) async {
+    try {
+      final maintenanceRepository = getIt<IMaintenanceRepository>();
+      final periodResult = await maintenanceRepository.getMaintenancePeriodById(periodId: widget.periodId);
+
+      periodResult.fold(
+        (failure) {
+          debugPrint('Error getting period details for receipt: ${failure.message}');
+        },
+        (period) async {
+          try {
+            final paymentDetails = _getPaymentMethodDetails();
+
+            final receiptFile = await ReceiptService.generateReceiptPDF(
+              payment: payment,
+              period: period,
+              paymentMethod: selectedPaymentMethod!,
+              checkNumber: paymentDetails['checkNumber'],
+              upiTransactionId: paymentDetails['transactionId'],
+            );
+
+            await ReceiptService.shareReceipt(receiptFile);
+          } catch (e) {
+            debugPrint('Error generating/sharing receipt: $e');
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint('Error in receipt generation process: $e');
+    }
+  }
+
+  // Helper method to send payment notification
+  Future<void> _sendPaymentNotification(double amountPaid) async {
+    try {
+      await NotificationService.sendPaymentConfirmationNotification(
+        userId: widget.payment.userId!,
+        userName: widget.payment.userName!,
+        amountPaid: amountPaid,
+        periodName: 'Current Period',
+        receiptNumber: receiptController.text.trim().isNotEmpty ? receiptController.text.trim() : 'N/A',
+      );
+    } catch (e) {
+      debugPrint('Failed to send payment notification: $e');
     }
   }
 

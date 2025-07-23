@@ -10,7 +10,6 @@ import 'package:society_management/expenses/view/expense_dashboard_page.dart';
 import 'package:society_management/injector/injector.dart';
 import 'package:society_management/line_head/dashboard/view/improved_line_head_quick_actions.dart';
 import 'package:society_management/line_head/dashboard/view/improved_line_head_summary_section.dart';
-import 'package:society_management/line_head/dashboard/view/line_head_activity_section.dart';
 import 'package:society_management/line_head/dashboard/widget/line_head_alert_dialog.dart';
 import 'package:society_management/line_member/dashboard/view/line_member_dashboard.dart';
 import 'package:society_management/maintenance/model/maintenance_period_model.dart';
@@ -36,8 +35,6 @@ class LineHeadDashboard extends StatefulWidget {
 class _LineHeadDashboardState extends State<LineHeadDashboard> with SingleTickerProviderStateMixin {
   // Keys to force refresh the dashboard widgets - using unique keys to prevent duplication
   final GlobalKey<ImprovedLineHeadSummarySectionState> _summaryKey = GlobalKey<ImprovedLineHeadSummarySectionState>();
-  final GlobalKey<LineHeadActivitySectionState> _activityKey = GlobalKey<LineHeadActivitySectionState>();
-
   final AuthService _authService = AuthService();
   UserModel? _currentUser;
   bool _isLoading = true;
@@ -309,7 +306,6 @@ class _LineHeadDashboardState extends State<LineHeadDashboard> with SingleTicker
 
   Future<void> _refreshDashboard() async {
     _summaryKey.currentState?.refreshStats();
-    _activityKey.currentState?.refreshActivities();
   }
 
   @override
@@ -484,17 +480,8 @@ class _LineHeadDashboardState extends State<LineHeadDashboard> with SingleTicker
                                     onActionComplete: () {
                                       // Refresh both dashboard sections
                                       _summaryKey.currentState?.refreshStats();
-                                      _activityKey.currentState?.refreshActivities();
                                     },
                                   ),
-                                  const SizedBox(height: 24),
-
-                                  // Activity section
-                                  LineHeadActivitySection(
-                                    key: _activityKey,
-                                    lineNumber: _currentUser?.lineNumber,
-                                  ),
-                                  const SizedBox(height: 100), // Extra space at bottom
                                 ],
                               ),
                             ),
