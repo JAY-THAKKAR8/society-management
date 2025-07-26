@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constru
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
+import 'package:society_management/constants/app_colors.dart';
 import 'package:society_management/constants/app_constants.dart';
 
 class UserModel extends Equatable {
@@ -157,5 +159,21 @@ class UserModel extends Equatable {
 
   bool get isLineMember {
     return role == AppConstants.lineMember || role == AppConstants.lineHeadAndMember;
+  }
+
+  /// Check if user is admin
+  bool get isAdmin {
+    return role == AppConstants.admin;
+  }
+
+  /// Get role-based color for UI elements
+  Color get roleColor {
+    if (isAdmin) {
+      return Colors.red;
+    } else if (isLineHead) {
+      return Colors.blue;
+    } else {
+      return AppColors.buttonColor;
+    }
   }
 }

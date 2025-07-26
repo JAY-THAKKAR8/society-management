@@ -288,7 +288,6 @@ class _AddUserPageState extends State<AddUserPage> {
         (r) async {
           isButtonLoading.value = false;
           Utility.toast(message: 'User created successfully');
-          context.read<RefreshCubit>().modifyUser(r, UserAction.add);
           context.pop();
         },
       );

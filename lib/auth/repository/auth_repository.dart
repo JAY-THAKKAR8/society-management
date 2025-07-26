@@ -182,65 +182,6 @@ class AuthRepository {
     String? creatorId,
   }) async {
     try {
-      // Check if creator is admin (if creatorId is provided)
-      // For now, we'll skip this check to allow any logged-in user to create users
-      // This can be re-enabled later when the user management system is more established
-
-      // Uncomment this code to enforce admin-only user creation:
-      /*
-      if (creatorId != null) {
-        try {
-          // First try to find by ID
-          final creatorDoc = await _firestore.collection('users').doc(creatorId).get();
-
-          if (creatorDoc.exists) {
-            final creatorData = creatorDoc.data();
-            if (creatorData == null || creatorData['role'] != AppConstants.admin) {
-              return AuthResult(
-                isSuccess: false,
-                errorMessage: 'Only admin users can create new users.',
-              );
-            }
-          } else {
-            // If not found by ID, check if the current Firebase user is admin
-            final currentUser = _firebaseAuth.currentUser;
-            if (currentUser == null) {
-              return AuthResult(
-                isSuccess: false,
-                errorMessage: 'No user is currently logged in.',
-              );
-            }
-
-            // Try to find user by email
-            final userQuery = await _firestore
-                .collection('users')
-                .where('email', isEqualTo: currentUser.email)
-                .limit(1)
-                .get();
-
-            if (userQuery.docs.isEmpty) {
-              return AuthResult(
-                isSuccess: false,
-                errorMessage: 'Creator user not found.',
-              );
-            }
-
-            final userData = userQuery.docs.first.data();
-            if (userData['role'] != AppConstants.admin) {
-              return AuthResult(
-                isSuccess: false,
-                errorMessage: 'Only admin users can create new users.',
-              );
-            }
-          }
-        } catch (e) {
-          // If any error occurs during admin check, allow the operation to proceed
-          // This is a fallback to prevent blocking legitimate operations
-          debugPrint('Error checking creator permissions: $e');
-        }
-      }
-      */
-
       // Check if user already exists
       final existingUsers = await _firestore.collection('users').where('email', isEqualTo: email).limit(1).get();
 
